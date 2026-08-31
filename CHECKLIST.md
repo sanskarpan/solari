@@ -113,6 +113,8 @@ or file evidence. Update this file in the same commit as the completed work.
       expected 4/1/3 record counts.
 - [x] Dry-run artifact contract includes raw CSV, normalized JSON, review CSV,
       HTML, and the manifest itself.
+- [x] Serve a dry-run review tree over local HTTP and verify the dashboard plus
+      every artifact link resolves successfully.
 - [ ] Live fixture run passes with a real API key, if available.
 - [ ] Live preview returns the review page and manifest.
 - [ ] Live volume reattach returns the same manifest.
