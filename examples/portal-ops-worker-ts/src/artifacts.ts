@@ -95,6 +95,11 @@ export function validateRunManifest(value: unknown): RunManifest {
   if (typeof value.startedAt !== "string" || typeof value.finishedAt !== "string") {
     throw new Error("manifest timestamps are invalid")
   }
+  const startedAt = Date.parse(value.startedAt)
+  const finishedAt = Date.parse(value.finishedAt)
+  if (!Number.isFinite(startedAt) || !Number.isFinite(finishedAt) || finishedAt < startedAt) {
+    throw new Error("manifest timestamps are inconsistent")
+  }
   if (!isObject(value.counts)) {
     throw new Error("manifest counts are invalid")
   }

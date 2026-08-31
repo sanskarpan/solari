@@ -56,6 +56,7 @@ or file evidence. Update this file in the same commit as the completed work.
 - [x] Implement manifest schema and redaction helpers.
 - [x] Runtime-validate persisted manifests, including status, source, counts,
       artifact paths, timestamps, and optional evidence fields.
+- [x] Reject invalid or backwards manifest timestamps during reattachment.
 - [x] Add unit tests for happy paths, malformed CSV, duplicate IDs, invalid
       currency/deadline, HTML escaping, and unique run directories.
 - [x] Run `npm test` and mark every corresponding test item done.
