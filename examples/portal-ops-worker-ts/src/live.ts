@@ -48,11 +48,16 @@ async function waitForHttp(url: string, timeoutMs = 30_000): Promise<void> {
   throw new Error(`Timed out waiting for ${url} (${lastStatus})`)
 }
 
-async function downloadBytes(download: { createReadStream(): Promise<AsyncIterable<Uint8Array> | null> }): Promise<Uint8Array> {
+export async function downloadBytes(download: { createReadStream(): Promise<AsyncIterable<Uint8Array> | null> }, maxBytes: number): Promise<Uint8Array> {
   const stream = await download.createReadStream()
   if (!stream) throw new Error("Solari browser returned no download stream")
   const chunks: Buffer[] = []
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk))
+  let totalBytes = 0
+  for await (const chunk of stream) {
+    totalBytes += chunk.byteLength
+    if (totalBytes > maxBytes) throw new Error("download exceeds MAX_DOWNLOAD_BYTES (" + maxBytes + ")")
+    chunks.push(Buffer.from(chunk))
+  }
   return Buffer.concat(chunks)
 }
 
@@ -289,7 +294,7 @@ export async function runLiveWorkflow(): Promise<void> {
       page.waitForEvent("download"),
       page.locator(config.downloadSelector).click(),
     ])
-    const csvBytes = await downloadBytes(download)
+    const csvBytes = await downloadBytes(download, config.maxDownloadBytes)
     await browserClient.profiles.save(profile.id, await page.context().storageState())
     if (config.enableStealth) console.log("browser proxy: enabled (credentials and vendor details withheld)")
     console.log(`download: ${download.suggestedFilename()} (${csvBytes.byteLength} bytes)`)

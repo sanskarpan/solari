@@ -129,6 +129,7 @@ browser session --download bytes--> host coordinator
 | `CLEANUP_VOLUME` | `0` | Delete the durable volume after the run |
 | `VOLUME_NAME` | `portal-ops-demo` | Reused organization volume |
 | `TIMEOUT_MS` | `300000` | Rolling idle window for VMs |
+| `MAX_DOWNLOAD_BYTES` | `25000000` | Maximum portal download size held in memory |
 | `PROXY_TIER` | `residential` | Managed proxy tier when stealth is enabled |
 | `PROXY_SESSION` | unset | Optional sticky proxy session ID |
 | `PROXY_SESSION_DURATION` | `10` | Sticky session lifetime in minutes |

@@ -18,6 +18,7 @@ export interface AppConfig {
   proxySession?: string | undefined
   proxySessionDuration: number
   captcha: boolean
+  maxDownloadBytes: number
   recording: boolean
   enableDesktop: boolean
   cleanupVolume: boolean
@@ -58,6 +59,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, dryRun = false)
     proxySession: env.PROXY_SESSION,
     proxySessionDuration: positiveInteger("PROXY_SESSION_DURATION", env.PROXY_SESSION_DURATION, 10),
     captcha: flag(env.CAPTCHA),
+    maxDownloadBytes: positiveInteger("MAX_DOWNLOAD_BYTES", env.MAX_DOWNLOAD_BYTES, 25_000_000),
     recording: flag(env.RECORDING),
     enableDesktop: flag(env.ENABLE_DESKTOP),
     cleanupVolume: flag(env.CLEANUP_VOLUME),

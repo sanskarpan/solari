@@ -7,7 +7,7 @@ import { test } from "node:test"
 import { parsePortalCsv, recordsToCsv } from "../src/csv.js"
 import { buildManifest, buildReviewHtml, escapeHtml, makeRunId, redactError } from "../src/artifacts.js"
 import { loadConfig } from "../src/config.js"
-import { buildLaunchOptions, cleanupLiveResources, pythonNormalizeCode, safePortalUrl } from "../src/live.js"
+import { buildLaunchOptions, cleanupLiveResources, downloadBytes, pythonNormalizeCode, safePortalUrl } from "../src/live.js"
 import { normalizeCsv, normalizeRecords, sampleRecords } from "../src/normalize.js"
 
 test("CSV round-trips quoted commas, quotes, and newlines", () => {
@@ -70,6 +70,17 @@ test("launch policy is explicit and never includes proxy credentials", () => {
     proxy: { country: "gb", tier: "static", session: "warm-1", sessionDuration: 30 },
   })
   assert.equal(safePortalUrl("https://portal.example.test/records?token=secret#fragment"), "https://portal.example.test/records")
+})
+
+test("download streaming enforces a bounded memory contract", async () => {
+  const download = {
+    createReadStream: async () => (async function* () {
+      yield new Uint8Array([1, 2])
+      yield new Uint8Array([3, 4])
+    })(),
+  }
+  assert.deepEqual(Buffer.from(await downloadBytes(download, 4)), Buffer.from([1, 2, 3, 4]))
+  await assert.rejects(() => downloadBytes(download, 3), /MAX_DOWNLOAD_BYTES/)
 })
 
 test("HTML output escapes untrusted portal content", () => {
