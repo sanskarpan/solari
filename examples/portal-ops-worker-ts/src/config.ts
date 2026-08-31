@@ -11,6 +11,7 @@ export interface AppConfig {
   recording: boolean
   enableDesktop: boolean
   cleanupVolume: boolean
+  failAfterDownload: boolean
 }
 
 function flag(value: string | undefined): boolean {
@@ -40,6 +41,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, dryRun = false)
     recording: flag(env.RECORDING),
     enableDesktop: flag(env.ENABLE_DESKTOP),
     cleanupVolume: flag(env.CLEANUP_VOLUME),
+    failAfterDownload: flag(env.FAIL_AFTER_DOWNLOAD),
   }
 
   if (!config.dryRun && !config.apiKey) {

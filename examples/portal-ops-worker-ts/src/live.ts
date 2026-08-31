@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises"
 import { Solari } from "@solarisdk/browser"
 import { SolariClient } from "@solarisdk/sdk"
 import type { Desktop, Sandbox } from "@solarisdk/sdk"
-import { buildManifest, buildReviewHtml, makeRunId } from "./artifacts.js"
+import { buildManifest, buildReviewHtml, makeRunId, redactError } from "./artifacts.js"
 import { loadConfig, type AppConfig } from "./config.js"
 import { parsePortalCsv } from "./csv.js"
 import { FIXTURE_PORTAL_SCRIPT, startFixture } from "./fixture.js"
@@ -37,7 +37,7 @@ async function downloadBytes(download: { createReadStream(): Promise<AsyncIterab
   return Buffer.concat(chunks)
 }
 
-function pythonNormalizeCode(inputPath: string, normalizedPath: string, reviewPath: string): string {
+export function pythonNormalizeCode(inputPath: string, normalizedPath: string, reviewPath: string): string {
   const input = JSON.stringify(inputPath)
   const normalized = JSON.stringify(normalizedPath)
   const review = JSON.stringify(reviewPath)
@@ -125,6 +125,33 @@ async function replayUrl(client: Solari, sessionId: string): Promise<string | un
   return undefined
 }
 
+type Closable = { close(): Promise<unknown> }
+type Killable = { kill(): Promise<unknown> }
+
+export async function cleanupLiveResources(resources: {
+  browser?: Closable | undefined
+  browserClient: Closable
+  desktop?: Killable | undefined
+  reviewServer?: Killable | undefined
+  portalServer?: Killable | undefined
+  verifier?: Killable | undefined
+  processing?: Killable | undefined
+  workspace?: Killable | undefined
+  cleanupVolume: boolean
+  volumeId?: string
+  deleteVolume: (volumeId: string) => Promise<unknown>
+}): Promise<void> {
+  await resources.browser?.close().catch(() => undefined)
+  await resources.browserClient.close().catch(() => undefined)
+  await resources.desktop?.kill().catch(() => undefined)
+  await resources.reviewServer?.kill().catch(() => undefined)
+  await resources.portalServer?.kill().catch(() => undefined)
+  await resources.verifier?.kill().catch(() => undefined)
+  await resources.processing?.kill().catch(() => undefined)
+  await resources.workspace?.kill().catch(() => undefined)
+  if (resources.cleanupVolume && resources.volumeId) await resources.deleteVolume(resources.volumeId).catch(() => undefined)
+}
+
 async function findOrCreateVolume(client: SolariClient, name: string): Promise<{ volumeId: string }> {
   const existing = (await client.volumes.list()).find((volume) => volume.name === name)
   if (existing) return existing
@@ -152,21 +179,26 @@ async function optionalDesktopReview(client: SolariClient, config: AppConfig, vo
     lifecycle: { onTimeout: "kill" },
     volumes: [{ volumeId, path: "/data" }],
   })
-  await desktop.connect()
-  let ready = false
-  for (let attempt = 0; attempt < 30; attempt += 1) {
-    if ((await desktop.health()).ready) {
-      ready = true
-      break
+  try {
+    await desktop.connect()
+    let ready = false
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      if ((await desktop.health()).ready) {
+        ready = true
+        break
+      }
+      await sleep(1_000)
     }
-    await sleep(1_000)
+    if (!ready) throw new Error("desktop did not become ready within 30 seconds")
+    await desktop.open("libreoffice", [reviewCsv])
+    await sleep(4_000)
+    const screenshotPath = reviewCsv.replace(/\/normalized\/review\.csv$/, "/review/desktop-review.png")
+    await workspace.files.write(screenshotPath, await desktop.screenshot({ format: "png" }))
+    return { desktop, screenshotPath }
+  } catch (error) {
+    await desktop.kill().catch(() => undefined)
+    throw error
   }
-  if (!ready) throw new Error("desktop did not become ready within 30 seconds")
-  await desktop.open("libreoffice", [reviewCsv])
-  await sleep(4_000)
-  const screenshotPath = reviewCsv.replace(/\/normalized\/review\.csv$/, "/review/desktop-review.png")
-  await workspace.files.write(screenshotPath, await desktop.screenshot({ format: "png" }))
-  return { desktop, screenshotPath }
 }
 
 export async function runLiveWorkflow(): Promise<void> {
@@ -192,6 +224,9 @@ export async function runLiveWorkflow(): Promise<void> {
   let desktop: Desktop | undefined
   let browserSessionId: string | undefined
   let replay: string | undefined
+  let normalized: NormalizedRecord[] = []
+  let sourceUrl = "fixture://portal"
+  let rawUploaded = false
 
   try {
     workspace = await client.sandboxes.create({ template: "base", volumes: [volumeMount], timeoutMs: config.timeoutMs, lifecycle: { onTimeout: "kill" } })
@@ -201,10 +236,12 @@ export async function runLiveWorkflow(): Promise<void> {
     portalServer = await startFixture(workspace, "/tmp/portal-fixture.py", false)
     const portalPreview = await workspace.previewUrl(3000)
     await waitForHttp(portalPreview.url)
+    sourceUrl = `fixture://${portalPreview.url}`
     console.log(`fixture portal: ${portalPreview.url}`)
 
     const profiles = await browserClient.profiles.list()
     const profile = profiles.find((item) => item.name === config.profileName) ?? await browserClient.profiles.create({ name: config.profileName })
+    if (config.recording) console.warn("recording enabled: login input may be captured in the replay; treat the replay as sensitive")
     const launchOptions = config.enableStealth
       ? { profileId: profile.id, recording: config.recording, stealth: true as const, proxy: { country: config.proxyCountry } }
       : { profileId: profile.id, recording: config.recording }
@@ -224,7 +261,7 @@ export async function runLiveWorkflow(): Promise<void> {
     ])
     const csvBytes = await downloadBytes(download)
     await browserClient.profiles.save(profile.id, await page.context().storageState())
-    if (config.enableStealth) console.log(`browser proxy: ${JSON.stringify(browser.proxy)}`)
+    if (config.enableStealth) console.log("browser proxy: enabled (credentials and vendor details withheld)")
     console.log(`download: ${download.suggestedFilename()} (${csvBytes.byteLength} bytes)`)
     await browser.close()
     browser = undefined
@@ -236,17 +273,19 @@ export async function runLiveWorkflow(): Promise<void> {
     processing = await createProcessingSandbox(client, snapshotId, volumeId, config.timeoutMs)
     await processing.commands.run("mkdir", { args: ["-p", `${runRoot}/raw`, `${runRoot}/normalized`, reviewDir] })
     await processing.files.upload(rawPath, csvBytes)
+    rawUploaded = true
+    if (config.failAfterDownload) throw new Error("failure injection requested after download transfer")
     const contextId = await processing.createCodeContext("python")
     const result = await processing.runCode(pythonNormalizeCode(rawPath, normalizedPath, reviewCsvPath), { language: "python", contextId })
     if (result.error) throw new Error(`sandbox normalization failed: ${result.error}`)
-    const normalized = JSON.parse(await processing.files.readText(normalizedPath)) as NormalizedRecord[]
+    normalized = JSON.parse(await processing.files.readText(normalizedPath)) as NormalizedRecord[]
     const localParity = normalizeRecords(parsePortalCsvForParity(csvBytes))
     if (JSON.stringify(normalized) !== JSON.stringify(localParity)) throw new Error("sandbox output differs from local contract normalization")
     await processing.kill()
     processing = undefined
     await workspace.files.write(`${reviewDir}/index.html`, buildReviewHtml(runId, normalized))
     const artifacts = [`runs/${runId}/raw/records.csv`, `runs/${runId}/normalized/normalized.json`, `runs/${runId}/normalized/review.csv`, `runs/${runId}/review/index.html`, `runs/${runId}/manifest.json`]
-    let manifest = buildManifest({ runId, status: "succeeded", sourceUrl: `fixture://${portalPreview.url}`, startedAt, finishedAt: new Date().toISOString(), records: normalized, artifacts, browserSessionId, replayUrl: replay })
+    let manifest = buildManifest({ runId, status: "succeeded", sourceUrl, startedAt, finishedAt: new Date().toISOString(), records: normalized, artifacts, browserSessionId, replayUrl: replay })
     await workspace.files.write(`${runRoot}/manifest.json`, JSON.stringify(manifest, null, 2) + "\n")
     await workspace.files.write(`${reviewDir}/manifest.json`, JSON.stringify(manifest, null, 2) + "\n")
     reviewServer = await workspace.commands.start("python3", { args: ["-m", "http.server", "3001", "--directory", reviewDir] })
@@ -268,22 +307,39 @@ export async function runLiveWorkflow(): Promise<void> {
     }
     desktop = desktopResult.desktop
     if (desktopResult.screenshotPath && desktopResult.desktop) {
-      manifest = buildManifest({ runId, status: "succeeded", sourceUrl: `fixture://${portalPreview.url}`, startedAt, finishedAt: new Date().toISOString(), records: normalized, artifacts: [...artifacts, `runs/${runId}/review/desktop-review.png`], browserSessionId, replayUrl: replay, desktopScreenshot: `runs/${runId}/review/desktop-review.png` })
+      manifest = buildManifest({ runId, status: "succeeded", sourceUrl, startedAt, finishedAt: new Date().toISOString(), records: normalized, artifacts: [...artifacts, `runs/${runId}/review/desktop-review.png`], browserSessionId, replayUrl: replay, desktopScreenshot: `runs/${runId}/review/desktop-review.png` })
       await workspace.files.write(`${runRoot}/manifest.json`, JSON.stringify(manifest, null, 2) + "\n")
       await workspace.files.write(`${reviewDir}/manifest.json`, JSON.stringify(manifest, null, 2) + "\n")
       console.log(`desktop screenshot: ${desktopResult.screenshotPath}`)
       console.log(`desktop stream: ${desktopResult.desktop.streamUrl}`)
     }
+  } catch (error) {
+    const failedArtifacts = rawUploaded ? [`runs/${runId}/raw/records.csv`] : []
+    const failedManifest = buildManifest({
+      runId,
+      status: "failed",
+      sourceUrl,
+      startedAt,
+      finishedAt: new Date().toISOString(),
+      records: normalized,
+      artifacts: [...failedArtifacts, `runs/${runId}/manifest.json`],
+      browserSessionId,
+      replayUrl: replay,
+      error: redactError(error, [config.password, config.username, config.apiKey ?? ""]),
+    })
+    if (workspace) {
+      try {
+        await workspace.commands.run("mkdir", { args: ["-p", runRoot, reviewDir] })
+        await workspace.files.write(`${runRoot}/manifest.json`, JSON.stringify(failedManifest, null, 2) + "\n")
+        if (normalized.length) await workspace.files.write(`${reviewDir}/index.html`, buildReviewHtml(runId, normalized))
+        console.error(`workflow failed; retained artifacts: ${runRoot}`)
+      } catch (manifestError) {
+        console.error(`workflow failed and failed-manifest write also failed: ${redactError(manifestError, [config.password, config.username, config.apiKey ?? ""])}`)
+      }
+    }
+    throw error
   } finally {
-    if (browser) await browser.close().catch(() => undefined)
-    await browserClient.close().catch(() => undefined)
-    if (desktop) await desktop.kill().catch(() => undefined)
-    if (reviewServer) await reviewServer.kill().catch(() => undefined)
-    if (portalServer) await portalServer.kill().catch(() => undefined)
-    if (verifier) await verifier.kill().catch(() => undefined)
-    if (processing) await processing.kill().catch(() => undefined)
-    if (workspace) await workspace.kill().catch(() => undefined)
-    if (config.cleanupVolume) await client.volumes.delete(volumeId).catch(() => undefined)
+    await cleanupLiveResources({ browser, browserClient, desktop, reviewServer, portalServer, verifier, processing, workspace, cleanupVolume: config.cleanupVolume, volumeId, deleteVolume: (id) => client.volumes.delete(id) })
   }
 }
 

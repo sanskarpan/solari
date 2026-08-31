@@ -1,8 +1,13 @@
 import assert from "node:assert/strict"
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
+import { spawn } from "node:child_process"
 import { test } from "node:test"
 import { parsePortalCsv, recordsToCsv } from "../src/csv.js"
-import { buildManifest, buildReviewHtml, escapeHtml, makeRunId } from "../src/artifacts.js"
+import { buildManifest, buildReviewHtml, escapeHtml, makeRunId, redactError } from "../src/artifacts.js"
 import { loadConfig } from "../src/config.js"
+import { cleanupLiveResources, pythonNormalizeCode } from "../src/live.js"
 import { normalizeCsv, normalizeRecords, sampleRecords } from "../src/normalize.js"
 
 test("CSV round-trips quoted commas, quotes, and newlines", () => {
@@ -39,6 +44,8 @@ test("config requires a live API key but supports explicit dry mode", () => {
   assert.equal(config.dryRun, true)
   assert.equal(config.timeoutMs, 1000)
   assert.equal(config.enableStealth, true)
+  assert.equal(config.failAfterDownload, false)
+  assert.equal(loadConfig({ FAIL_AFTER_DOWNLOAD: "1" }, true).failAfterDownload, true)
 })
 
 test("HTML output escapes untrusted portal content", () => {
@@ -59,6 +66,52 @@ test("manifest counts records and does not include credentials", () => {
   })
   assert.deepEqual(manifest.counts, { input: 4, valid: 1, invalid: 3 })
   assert.equal("password" in manifest, false)
+})
+
+test("failed manifests retain the error contract without credentials", () => {
+  const manifest = buildManifest({
+    runId: "run-failed", status: "failed", sourceUrl: "fixture://portal",
+    startedAt: "2026-09-01T00:00:00.000Z", finishedAt: "2026-09-01T00:00:01.000Z",
+    records: [], artifacts: ["runs/run-failed/raw/records.csv", "runs/run-failed/manifest.json"],
+    error: redactError(new Error("login failed for demo-user with demo-password"), ["demo-user", "demo-password"]),
+  })
+  assert.equal(manifest.status, "failed")
+  assert.equal(manifest.error, "login failed for [REDACTED] with [REDACTED]")
+  assert.deepEqual(manifest.counts, { input: 0, valid: 0, invalid: 0 })
+})
+
+test("cleanup attempts every resource even when one teardown fails", async () => {
+  const calls: string[] = []
+  const failing = (name: string) => ({ kill: async () => { calls.push(name); throw new Error("teardown failure") } })
+  const working = (name: string) => ({ kill: async () => { calls.push(name) } })
+  await cleanupLiveResources({
+    browser: { close: async () => { calls.push("browser") } },
+    browserClient: { close: async () => { calls.push("browser-client") } },
+    desktop: failing("desktop"), reviewServer: working("review"), portalServer: working("portal"),
+    verifier: working("verifier"), processing: working("processing"), workspace: working("workspace"),
+    cleanupVolume: true, volumeId: "vol-1", deleteVolume: async () => { calls.push("volume") },
+  })
+  assert.deepEqual(calls, ["browser", "browser-client", "desktop", "review", "portal", "verifier", "processing", "workspace", "volume"])
+})
+
+test("the sandbox Python normalizer matches the local contract", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "portal-ops-python-"))
+  const input = join(dir, "records.csv")
+  const normalized = join(dir, "normalized.json")
+  const review = join(dir, "review.csv")
+  await writeFile(input, recordsToCsv(sampleRecords()))
+  const child = spawn("python3", ["-c", pythonNormalizeCode(input, normalized, review)], { stdio: "ignore" })
+  const exitCode = await new Promise<number>((resolve, reject) => {
+    child.once("error", reject)
+    child.once("close", (code) => resolve(code ?? 1))
+  })
+  try {
+    assert.equal(exitCode, 0)
+    assert.deepEqual(JSON.parse(await readFile(normalized, "utf8")), normalizeRecords(sampleRecords()))
+    assert.match(await readFile(review, "utf8"), /validationErrors/)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
 })
 
 test("run ids are filesystem-safe and unique enough for concurrent runs", () => {

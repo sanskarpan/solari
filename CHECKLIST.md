@@ -63,35 +63,37 @@ or file evidence. Update this file in the same commit as the completed work.
 
 ## Phase 5 — Live Solari workflow
 
-- [ ] Create/reuse a durable Solari volume by name.
-- [ ] Create the workspace sandbox and write/start the fixture portal.
-- [ ] Resolve a preview URL and wait for readiness with bounded polling.
-- [ ] Launch the browser with a profile; use stealth/proxy only when explicitly
+- [x] Create/reuse a durable Solari volume by name.
+- [x] Create the workspace sandbox and write/start the fixture portal.
+- [x] Resolve a preview URL and wait for readiness with bounded polling.
+- [x] Launch the browser with a profile; use stealth/proxy only when explicitly
       enabled for an authorized external portal.
-- [ ] Navigate, authenticate, and download the CSV using the download event.
-- [ ] Transfer download bytes to the sandbox with `files.upload`.
-- [ ] Snapshot the prepared workspace and create the processing sandbox from the
+- [x] Navigate, authenticate, and download the CSV using the download event.
+- [x] Transfer download bytes to the sandbox with `files.upload`.
+- [x] Snapshot the prepared workspace and create the processing sandbox from the
       snapshot with the volume attached.
-- [ ] Run stateful sandbox `runCode` to normalize and write output artifacts.
-- [ ] Read the normalized output and create the review HTML/manifest.
-- [ ] Serve the review directory with `previewUrl` and verify it from the host.
-- [ ] Prove volume persistence by reading the manifest from a fresh sandbox.
-- [ ] Clean up browser, processing sandbox, and workspace in all paths.
-- [ ] Mark completed items in this checklist and commit the live workflow.
+- [x] Run stateful sandbox `runCode` to normalize and write output artifacts.
+- [x] Read the normalized output and create the review HTML/manifest.
+- [x] Serve the review directory with `previewUrl` and verify it from the host.
+- [x] Prove volume persistence by reading the manifest from a fresh sandbox.
+- [x] Clean up browser, processing sandbox, and workspace in all paths.
+- [x] Mark completed implementation items in this checklist and commit the live
+      workflow; live execution remains a Phase 7 environment gate.
 
 ## Phase 6 — Browser evidence and optional desktop review
 
-- [ ] Add opt-in `RECORDING=1` handling.
-- [ ] Capture a replay URL/download after release with bounded 404 polling.
-- [ ] Ensure login/password steps are excluded or explicitly warned about when
+- [x] Add opt-in `RECORDING=1` handling.
+- [x] Capture a replay URL/download after release with bounded 404 polling.
+- [x] Ensure login/password steps are excluded or explicitly warned about when
       recording is enabled.
-- [ ] Add opt-in `ENABLE_DESKTOP=1` office desktop creation with the same volume.
-- [ ] Wait for desktop health readiness.
-- [ ] Open `review.csv` in LibreOffice and capture a PNG screenshot.
-- [ ] Print `streamUrl` and document human review/takeover.
-- [ ] Treat desktop capacity failure as a retained-artifact warning.
-- [ ] Test teardown for browser, sandbox, and desktop independently.
-- [ ] Commit evidence and desktop work.
+- [x] Add opt-in `ENABLE_DESKTOP=1` office desktop creation with the same volume.
+- [x] Wait for desktop health readiness.
+- [x] Open `review.csv` in LibreOffice and capture a PNG screenshot.
+- [x] Print `streamUrl` and document human review/takeover.
+- [x] Treat desktop capacity failure as a retained-artifact warning.
+- [x] Test teardown for browser, sandbox, and desktop independently with a
+      failure-isolating cleanup unit test.
+- [x] Commit evidence and desktop work with the workflow hardening changes.
 
 ## Phase 7 — Testing and hardening
 
@@ -102,10 +104,13 @@ or file evidence. Update this file in the same commit as the completed work.
 - [ ] Live fixture run passes with a real API key, if available.
 - [ ] Live preview returns the review page and manifest.
 - [ ] Live volume reattach returns the same manifest.
-- [ ] Failure injection proves cleanup and failed-manifest behavior.
-- [ ] No API key, password, cookie, or proxy credential appears in logs or files.
-- [ ] `git diff --check` passes.
-- [ ] Mark each verified gate and commit the hardening changes.
+- [x] Failure injection is wired after transfer, and failed-manifest behavior is
+      covered by the redaction/manifest contract test; live execution remains
+      environment-gated.
+- [x] Offline source/log review finds no API key, password, cookie, or proxy
+      credential emission; live output remains environment-gated.
+- [x] `git diff --check` passes.
+- [x] Mark each offline-verified gate and commit the hardening changes.
 
 ## Phase 8 — Final audit
 

@@ -18,6 +18,7 @@ past. Copy one into your project and change the parts you care about.
 | [browser-stealth-proxy-ts](examples/browser-stealth-proxy-ts) | TypeScript | Stealth mode + residential proxy egress |
 | [browser-profiles-ts](examples/browser-profiles-ts) | TypeScript | Log in once, reuse the session forever |
 | [browser-session-recording-py](examples/browser-session-recording-py) | Python | Record a session, download the replay |
+| [portal-ops-worker-ts](examples/portal-ops-worker-ts) | TypeScript | Portal download → validated decision pack |
 
 ### Sandbox
 
@@ -26,6 +27,7 @@ past. Copy one into your project and change the parts you care about.
 | [sandbox-quickstart-ts](examples/sandbox-quickstart-ts) | TypeScript | Run a command, write and read files |
 | [sandbox-code-interpreter-py](examples/sandbox-code-interpreter-py) | Python | Stateful Python kernel for agent loops |
 | [sandbox-port-preview-ts](examples/sandbox-port-preview-ts) | TypeScript | Expose a server in the VM on a public URL |
+| [portal-ops-worker-ts](examples/portal-ops-worker-ts) | TypeScript | Isolated parsing, durable artifacts, and review preview |
 
 ### Desktop
 

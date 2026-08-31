@@ -45,7 +45,7 @@ export function buildManifest(input: {
   finishedAt: string
   records: NormalizedRecord[]
   artifacts: string[]
-  browserSessionId?: string
+  browserSessionId?: string | undefined
   replayUrl?: string | undefined
   desktopScreenshot?: string
   error?: string
@@ -69,4 +69,9 @@ export function buildManifest(input: {
   if (input.desktopScreenshot) manifest.desktopScreenshot = input.desktopScreenshot
   if (input.error) manifest.error = input.error
   return manifest
+}
+
+export function redactError(error: unknown, secrets: string[]): string {
+  const message = error instanceof Error ? error.message : String(error)
+  return secrets.filter(Boolean).reduce((safe, secret) => safe.split(secret).join("[REDACTED]"), message)
 }

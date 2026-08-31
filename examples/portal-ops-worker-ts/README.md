@@ -27,6 +27,9 @@ npm start
 
 # Optional: enable browser replay and desktop review.
 RECORDING=1 ENABLE_DESKTOP=1 npm start
+
+# Test-only: force a post-transfer failure and retain a failed manifest.
+FAIL_AFTER_DOWNLOAD=1 npm start
 ```
 
 The live run prints the review URL, volume/run paths, and (when enabled) the
@@ -59,6 +62,8 @@ single shared `results.json`.
 - `commands.run` is not shell-interpreted; use `args` or `sh -c`.
 - Snapshots preserve machine state; volumes preserve run artifacts.
 - Desktop capacity can be unavailable even when browser/sandbox capacity exists.
+- `FAIL_AFTER_DOWNLOAD=1` is an intentional live-path failure test; it should
+  leave the raw transfer and a failed manifest on the volume before cleanup.
 - Never log API keys, profile storage state, passwords, or proxy credentials.
 
 Source: [`index.ts`](index.ts)
