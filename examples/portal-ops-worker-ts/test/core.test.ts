@@ -7,7 +7,7 @@ import { test } from "node:test"
 import { parsePortalCsv, recordsToCsv } from "../src/csv.js"
 import { buildManifest, buildReviewHtml, escapeHtml, makeRunId, redactError } from "../src/artifacts.js"
 import { loadConfig } from "../src/config.js"
-import { buildLaunchOptions, cleanupLiveResources, downloadBytes, pythonNormalizeCode, safePortalUrl } from "../src/live.js"
+import { buildLaunchOptions, cleanupLiveResources, downloadBytes, pollReplayUrl, pythonNormalizeCode, safePortalUrl } from "../src/live.js"
 import { normalizeCsv, normalizeRecords, sampleRecords } from "../src/normalize.js"
 
 test("CSV round-trips quoted commas, quotes, and newlines", () => {
@@ -81,6 +81,31 @@ test("download streaming enforces a bounded memory contract", async () => {
   }
   assert.deepEqual(Buffer.from(await downloadBytes(download, 4)), Buffer.from([1, 2, 3, 4]))
   await assert.rejects(() => downloadBytes(download, 3), /MAX_DOWNLOAD_BYTES/)
+})
+
+test("replay polling retries only 404s and is bounded", async () => {
+  let calls = 0
+  const delayed = await pollReplayUrl(async () => {
+    calls += 1
+    if (calls < 3) {
+      const error = Object.assign(new Error("not ready"), { status: 404 })
+      throw error
+    }
+    return { url: "https://replay.example.test/r-1" }
+  }, { attempts: 3, delayMs: 0, sleepFn: async () => undefined })
+  assert.equal(delayed, "https://replay.example.test/r-1")
+  assert.equal(calls, 3)
+
+  let timeoutCalls = 0
+  const timeout = await pollReplayUrl(async () => {
+    timeoutCalls += 1
+    throw Object.assign(new Error("not ready"), { status: 404 })
+  }, { attempts: 2, delayMs: 0, sleepFn: async () => undefined })
+  assert.equal(timeout, undefined)
+  assert.equal(timeoutCalls, 2)
+  await assert.rejects(() => pollReplayUrl(async () => {
+    throw Object.assign(new Error("bad request"), { status: 400 })
+  }, { attempts: 2, delayMs: 0, sleepFn: async () => undefined }), /bad request/)
 })
 
 test("HTML output escapes untrusted portal content", () => {

@@ -135,18 +135,28 @@ with open(REVIEW, "w", newline="", encoding="utf-8") as handle:
 print(json.dumps({"input": len(output), "valid": sum(x["valid"] for x in output), "invalid": sum(not x["valid"] for x in output)}))`
 }
 
-async function replayUrl(client: Solari, sessionId: string): Promise<string | undefined> {
-  for (let attempt = 1; attempt <= 10; attempt += 1) {
+export async function pollReplayUrl(
+  getReplay: () => Promise<{ url: string }>,
+  options: { attempts?: number; delayMs?: number; sleepFn?: (ms: number) => Promise<void> } = {},
+): Promise<string | undefined> {
+  const attempts = options.attempts ?? 10
+  const delayMs = options.delayMs ?? 3_000
+  const sleepFn = options.sleepFn ?? sleep
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
-      return (await client.sessions.getReplayUrl(sessionId)).url
+      return (await getReplay()).url
     } catch (error) {
       const status = error instanceof Error && "status" in error ? (error as { status?: number }).status : undefined
       if (status !== 404) throw error
-      console.log(`replay attempt ${attempt}: not uploaded yet`)
-      await sleep(3_000)
+      console.log("replay attempt " + attempt + ": not uploaded yet")
+      if (attempt < attempts) await sleepFn(delayMs)
     }
   }
   return undefined
+}
+
+async function replayUrl(client: Solari, sessionId: string): Promise<string | undefined> {
+  return pollReplayUrl(() => client.sessions.getReplayUrl(sessionId))
 }
 
 type Closable = { close(): Promise<unknown> }

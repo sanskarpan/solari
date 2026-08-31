@@ -112,7 +112,7 @@ or file evidence. Update this file in the same commit as the completed work.
 - [x] `npm install` from a clean example directory (`npm ci` in a temporary
       copy) succeeds with zero reported vulnerabilities.
 - [x] `npm run typecheck` passes.
-- [x] `npm test` passes: 14 tests.
+- [x] `npm test` passes: 15 tests.
 - [x] `npm run dry` passes twice and produces isolated run directories with the
       expected 4/1/3 record counts.
 - [x] Dry-run artifact contract includes raw CSV, normalized JSON, review CSV,
