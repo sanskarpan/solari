@@ -7,7 +7,7 @@ import { test } from "node:test"
 import { parsePortalCsv, recordsToCsv } from "../src/csv.js"
 import { buildManifest, buildReviewHtml, escapeHtml, makeRunId, redactError } from "../src/artifacts.js"
 import { loadConfig } from "../src/config.js"
-import { cleanupLiveResources, pythonNormalizeCode } from "../src/live.js"
+import { buildLaunchOptions, cleanupLiveResources, pythonNormalizeCode, safePortalUrl } from "../src/live.js"
 import { normalizeCsv, normalizeRecords, sampleRecords } from "../src/normalize.js"
 
 test("CSV round-trips quoted commas, quotes, and newlines", () => {
@@ -56,6 +56,20 @@ test("config requires a live API key but supports explicit dry mode", () => {
   assert.throws(() => loadConfig({ PORTAL_URL: "https://user:password@portal.example.test", ALLOW_EXTERNAL_PORTAL: "1" }, true), /embedded credentials/)
   const external = loadConfig({ PORTAL_URL: "https://portal.example.test", ALLOW_EXTERNAL_PORTAL: "1" }, true)
   assert.equal(external.portalUrl, "https://portal.example.test")
+})
+
+test("launch policy is explicit and never includes proxy credentials", () => {
+  const defaults = loadConfig({}, true)
+  assert.deepEqual(buildLaunchOptions(defaults, "profile-1"), { profileId: "profile-1", recording: false })
+  const resilient = loadConfig({
+    ENABLE_STEALTH: "1", CAPTCHA: "1", RECORDING: "1", PROXY_COUNTRY: "gb",
+    PROXY_TIER: "static", PROXY_SESSION: "warm-1", PROXY_SESSION_DURATION: "30",
+  }, true)
+  assert.deepEqual(buildLaunchOptions(resilient, "profile-1"), {
+    profileId: "profile-1", recording: true, stealth: true, captcha: true,
+    proxy: { country: "gb", tier: "static", session: "warm-1", sessionDuration: 30 },
+  })
+  assert.equal(safePortalUrl("https://portal.example.test/records?token=secret#fragment"), "https://portal.example.test/records")
 })
 
 test("HTML output escapes untrusted portal content", () => {

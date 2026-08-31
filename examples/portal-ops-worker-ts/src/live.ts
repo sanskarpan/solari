@@ -1,4 +1,4 @@
-import { Solari } from "@solarisdk/browser"
+import { Solari, type LaunchOptions } from "@solarisdk/browser"
 import { SolariClient } from "@solarisdk/sdk"
 import type { Desktop, Sandbox } from "@solarisdk/sdk"
 import { buildManifest, buildReviewHtml, makeRunId, redactError } from "./artifacts.js"
@@ -12,9 +12,24 @@ const BASE_URL = "https://api.getsolari.com"
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
-function safePortalUrl(rawUrl: string): string {
+export function safePortalUrl(rawUrl: string): string {
   const parsed = new URL(rawUrl)
   return parsed.origin + (parsed.pathname || "/")
+}
+
+export function buildLaunchOptions(config: AppConfig, profileId: string): LaunchOptions {
+  if (!config.enableStealth) return { profileId, recording: config.recording }
+  return {
+    profileId,
+    recording: config.recording,
+    stealth: true,
+    captcha: config.captcha,
+    proxy: {
+      country: config.proxyCountry,
+      tier: config.proxyTier,
+      ...(config.proxySession ? { session: config.proxySession, sessionDuration: config.proxySessionDuration } : {}),
+    },
+  }
 }
 
 async function waitForHttp(url: string, timeoutMs = 30_000): Promise<void> {
@@ -258,20 +273,7 @@ export async function runLiveWorkflow(): Promise<void> {
     const profiles = await browserClient.profiles.list()
     const profile = profiles.find((item) => item.name === config.profileName) ?? await browserClient.profiles.create({ name: config.profileName })
     if (config.recording) console.warn("recording enabled: login input may be captured in the replay; treat the replay as sensitive")
-    const launchOptions = config.enableStealth
-      ? {
-          profileId: profile.id,
-          recording: config.recording,
-          stealth: true as const,
-          captcha: config.captcha,
-          proxy: {
-            country: config.proxyCountry,
-            tier: config.proxyTier,
-            ...(config.proxySession ? { session: config.proxySession, sessionDuration: config.proxySessionDuration } : {}),
-          },
-        }
-      : { profileId: profile.id, recording: config.recording }
-    browser = await browserClient.launch(launchOptions)
+    browser = await browserClient.launch(buildLaunchOptions(config, profile.id))
     browserSessionId = browser.id
     page = await browser.newPage()
     await page.goto(portalUrl, { waitUntil: "domcontentloaded" })

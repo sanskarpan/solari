@@ -72,6 +72,8 @@ or file evidence. Update this file in the same commit as the completed work.
       enabled for an authorized external portal.
 - [x] Support typed proxy tier/sticky-session and managed CAPTCHA options with
       validation; keep them disabled by default and cost-free for the fixture.
+- [x] Extract and unit-test the browser launch policy so default and resilient
+      sessions cannot silently diverge.
 - [x] Navigate, authenticate, and download the CSV using the download event.
 - [x] Transfer download bytes to the sandbox with `files.upload`.
 - [x] Snapshot the prepared workspace and create the processing sandbox from the
@@ -108,7 +110,7 @@ or file evidence. Update this file in the same commit as the completed work.
 - [x] `npm install` from a clean example directory (`npm ci` in a temporary
       copy) succeeds with zero reported vulnerabilities.
 - [x] `npm run typecheck` passes.
-- [x] `npm test` passes: 12 tests.
+- [x] `npm test` passes: 13 tests.
 - [x] `npm run dry` passes twice and produces isolated run directories with the
       expected 4/1/3 record counts.
 - [x] Dry-run artifact contract includes raw CSV, normalized JSON, review CSV,
