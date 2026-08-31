@@ -31,9 +31,9 @@ export function buildReviewHtml(runId: string, records: NormalizedRecord[]): str
   return `<!doctype html>
 <html><head><meta charset="utf-8"><title>Portal review ${escapeHtml(runId)}</title>
 <style>body{font:15px system-ui;margin:2rem;color:#17202a}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccd;padding:.55rem;text-align:left}th{background:#eef2f5}.valid{background:#f3fff5}.invalid{background:#fff4f3}.badge{display:inline-block;padding:.3rem .6rem;border-radius:1rem;background:#e8eef7;margin-right:.5rem}</style>
-<p>Artifacts: <a href="../raw/records.csv">raw CSV</a> · <a href="../normalized/normalized.json">normalized JSON</a> · <a href="../normalized/review.csv">review CSV</a> · <a href="../manifest.json">manifest</a></p>
 </head><body><h1>Portal decision pack</h1><p>Run <code>${escapeHtml(runId)}</code></p>
 <p><span class="badge">${records.length} records</span><span class="badge">${valid} valid</span><span class="badge">${records.length - valid} need review</span></p>
+<p>Artifacts: <a href="../raw/records.csv">raw CSV</a> · <a href="../normalized/normalized.json">normalized JSON</a> · <a href="../normalized/review.csv">review CSV</a> · <a href="../manifest.json">manifest</a></p>
 <table><thead><tr><th>ID</th><th>Title</th><th>Organization</th><th>Deadline</th><th>Budget</th><th>Status</th><th>Validation</th></tr></thead><tbody>${rows}</tbody></table>
 </body></html>\n`
 }

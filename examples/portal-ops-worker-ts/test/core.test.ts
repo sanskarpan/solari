@@ -67,6 +67,7 @@ test("HTML output escapes untrusted portal content", () => {
   assert.ok(!html.includes("<script>"))
   assert.match(html, /href="\.\.\/normalized\/review\.csv"/)
   assert.match(html, /href="\.\.\/manifest\.json"/)
+  assert.ok(html.indexOf("</head>") < html.indexOf("Artifacts:"))
   assert.equal(escapeHtml("&<>\"'"), "&amp;&lt;&gt;&quot;&#39;")
 })
 
