@@ -46,7 +46,7 @@ export function buildManifest(input: {
   records: NormalizedRecord[]
   artifacts: string[]
   browserSessionId?: string
-  replayUrl?: string
+  replayUrl?: string | undefined
   desktopScreenshot?: string
   error?: string
 }): RunManifest {

@@ -53,12 +53,13 @@ or file evidence. Update this file in the same commit as the completed work.
 
 ## Phase 4 — Deterministic fixture portal
 
-- [ ] Add a fixture portal server using only Node standard library.
-- [ ] Add login, cookie session, records page, and CSV download endpoints.
-- [ ] Add a deliberately invalid record and a duplicate to exercise validation.
-- [ ] Add fixture-only credentials that are never used as production secrets.
-- [ ] Add fixture tests for login, protected records, and download response.
-- [ ] Run tests and commit the fixture.
+- [x] Add a fixture portal server using only Python standard library available in
+      the documented base sandbox image.
+- [x] Add login, cookie session, records page, and CSV download endpoints.
+- [x] Add a deliberately invalid record and a duplicate to exercise validation.
+- [x] Add fixture-only credentials that are never used as production secrets.
+- [x] Add fixture tests for login, protected records, and download response.
+- [x] Run tests, Python syntax validation, and commit the fixture.
 
 ## Phase 5 — Live Solari workflow
 
