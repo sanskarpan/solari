@@ -97,10 +97,12 @@ or file evidence. Update this file in the same commit as the completed work.
 
 ## Phase 7 — Testing and hardening
 
-- [ ] `npm install` from a clean example directory.
-- [ ] `npm run typecheck` passes.
-- [ ] `npm test` passes.
-- [ ] `npm run dry` passes twice and produces isolated run directories.
+- [x] `npm install` from a clean example directory (`npm ci` in a temporary
+      copy) succeeds with zero reported vulnerabilities.
+- [x] `npm run typecheck` passes.
+- [x] `npm test` passes: 12 tests.
+- [x] `npm run dry` passes twice and produces isolated run directories with the
+      expected 4/1/3 record counts.
 - [ ] Live fixture run passes with a real API key, if available.
 - [ ] Live preview returns the review page and manifest.
 - [ ] Live volume reattach returns the same manifest.
@@ -114,14 +116,17 @@ or file evidence. Update this file in the same commit as the completed work.
 
 ## Phase 8 — Final audit
 
-- [ ] Review every SPEC requirement against current files and test evidence.
-- [ ] Review all unchecked items and either complete them or document why they
-      are explicitly future work.
-- [ ] Confirm `git status` is clean except intentional generated/ignored files.
-- [ ] Confirm commit history contains separate cleanup, spec, scaffold/core,
-      workflow, evidence, and hardening commits.
-- [ ] Provide final report separating offline-verified behavior from live API or
-      desktop-capacity-gated behavior.
+- [x] Review every SPEC requirement against current files and test evidence;
+      the three live API gates above remain explicitly unverified because no
+      `SOLARI_API_KEY` is available in this environment.
+- [x] Review all unchecked items and document the live gates and deferred
+      product work rather than claiming them as complete.
+- [x] Confirm `git status` is clean except intentional generated/ignored files.
+- [x] Confirm commit history contains separate cleanup, spec, scaffold/core,
+      workflow, and hardening commits; evidence/desktop work is included in the
+      hardening commit.
+- [x] Provide a final report separating offline-verified behavior from live API
+      or desktop-capacity-gated behavior.
 
 ## Deferred product work
 
