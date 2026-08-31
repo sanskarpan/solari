@@ -56,6 +56,35 @@ export function normalizeCsv(input: string): NormalizedRecord[] {
   return normalizeRecords(parsePortalCsv(input))
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null
+}
+
+export function validateNormalizedRecords(value: unknown): NormalizedRecord[] {
+  if (!Array.isArray(value)) throw new Error("sandbox normalized output must be an array")
+  return value.map((item, index) => {
+    if (!isObject(item)) throw new Error("sandbox normalized record " + index + " must be an object")
+    const requiredStrings = ["recordId", "title", "organization", "status"] as const
+    for (const field of requiredStrings) {
+      if (typeof item[field] !== "string") throw new Error("sandbox normalized record " + index + "." + field + " must be a string")
+    }
+    if (item.deadline !== null && typeof item.deadline !== "string") {
+      throw new Error("sandbox normalized record " + index + ".deadline must be a string or null")
+    }
+    if (item.budgetCents !== null && (typeof item.budgetCents !== "number" || !Number.isSafeInteger(item.budgetCents) || item.budgetCents < 0)) {
+      throw new Error("sandbox normalized record " + index + ".budgetCents must be a non-negative safe integer or null")
+    }
+    if (!Array.isArray(item.documents) || item.documents.some((document) => typeof document !== "string")) {
+      throw new Error("sandbox normalized record " + index + ".documents must be a string array")
+    }
+    if (typeof item.valid !== "boolean") throw new Error("sandbox normalized record " + index + ".valid must be boolean")
+    if (!Array.isArray(item.validationErrors) || item.validationErrors.some((error) => typeof error !== "string")) {
+      throw new Error("sandbox normalized record " + index + ".validationErrors must be a string array")
+    }
+    return item as unknown as NormalizedRecord
+  })
+}
+
 export function sampleRecords(): PortalRecord[] {
   return [
     {

@@ -5,7 +5,7 @@ import { buildManifest, buildReviewHtml, makeRunId, redactError } from "./artifa
 import { loadConfig, type AppConfig } from "./config.js"
 import { parsePortalCsv } from "./csv.js"
 import { FIXTURE_PORTAL_SCRIPT, startFixture } from "./fixture.js"
-import { normalizeRecords } from "./normalize.js"
+import { normalizeRecords, validateNormalizedRecords } from "./normalize.js"
 import type { NormalizedRecord } from "./types.js"
 
 const BASE_URL = "https://api.getsolari.com"
@@ -323,7 +323,7 @@ export async function runLiveWorkflow(): Promise<void> {
     const contextId = await processing.createCodeContext("python")
     const result = await processing.runCode(pythonNormalizeCode(rawPath, normalizedPath, reviewCsvPath), { language: "python", contextId })
     if (result.error) throw new Error(`sandbox normalization failed: ${result.error}`)
-    normalized = JSON.parse(await processing.files.readText(normalizedPath)) as NormalizedRecord[]
+    normalized = validateNormalizedRecords(JSON.parse(await processing.files.readText(normalizedPath)))
     const localParity = normalizeRecords(parsePortalCsvForParity(csvBytes))
     if (JSON.stringify(normalized) !== JSON.stringify(localParity)) throw new Error("sandbox output differs from local contract normalization")
     await processing.kill()

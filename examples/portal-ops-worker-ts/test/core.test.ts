@@ -8,7 +8,7 @@ import { parsePortalCsv, recordsToCsv } from "../src/csv.js"
 import { buildManifest, buildReviewHtml, escapeHtml, makeRunId, redactError } from "../src/artifacts.js"
 import { loadConfig } from "../src/config.js"
 import { buildLaunchOptions, cleanupLiveResources, downloadBytes, pollReplayUrl, pythonNormalizeCode, safePortalUrl } from "../src/live.js"
-import { normalizeCsv, normalizeRecords, sampleRecords } from "../src/normalize.js"
+import { normalizeCsv, normalizeRecords, sampleRecords, validateNormalizedRecords } from "../src/normalize.js"
 
 test("CSV round-trips quoted commas, quotes, and newlines", () => {
   const records = [{ ...sampleRecords()[0]!, title: "Network, wired\nbackbone", documents: 'a"b.pdf' }]
@@ -23,6 +23,15 @@ test("normalization preserves invalid rows and explains every failure", () => {
   assert.ok(records[1]!.validationErrors.includes("duplicate recordId"))
   assert.ok(records[2]!.validationErrors.includes("deadline is not a real calendar date"))
   assert.ok(records[2]!.validationErrors.includes("budget must be a non-negative currency amount"))
+})
+
+test("normalized sandbox output is runtime-validated before persistence", () => {
+  const normalized = normalizeRecords(sampleRecords())
+  assert.deepEqual(validateNormalizedRecords(normalized), normalized)
+  assert.throws(() => validateNormalizedRecords({}), /must be an array/)
+  assert.throws(() => validateNormalizedRecords([{ ...normalized[0], budgetCents: -1 }]), /budgetCents/)
+  assert.throws(() => validateNormalizedRecords([{ ...normalized[0], documents: ["ok", 1] }]), /documents/)
+  assert.throws(() => validateNormalizedRecords([{ ...normalized[0], validationErrors: "bad" }]), /validationErrors/)
 })
 
 test("CSV normalization accepts CRLF and currency commas", () => {

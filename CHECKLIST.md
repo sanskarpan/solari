@@ -45,6 +45,8 @@ or file evidence. Update this file in the same commit as the completed work.
 - [x] Implement CSV parsing with quoted-field support and helpful errors.
 - [x] Implement deterministic normalization: dates, currency, status, lists,
       duplicate IDs, and invalid-row preservation.
+- [x] Runtime-validate sandbox normalized JSON before allowing it into the
+      manifest or review artifacts.
 - [x] Implement HTML escaping for review artifacts.
 - [x] Implement run-id and run-directory generation without path traversal.
 - [x] Implement manifest schema and redaction helpers.
@@ -112,7 +114,7 @@ or file evidence. Update this file in the same commit as the completed work.
 - [x] `npm install` from a clean example directory (`npm ci` in a temporary
       copy) succeeds with zero reported vulnerabilities.
 - [x] `npm run typecheck` passes.
-- [x] `npm test` passes: 15 tests.
+- [x] `npm test` passes: 16 tests.
 - [x] `npm run dry` passes twice and produces isolated run directories with the
       expected 4/1/3 record counts.
 - [x] Dry-run artifact contract includes raw CSV, normalized JSON, review CSV,
