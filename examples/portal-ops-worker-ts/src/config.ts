@@ -76,6 +76,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, dryRun = false)
   if (config.proxySession && !/^[A-Za-z0-9-]{1,32}$/.test(config.proxySession)) {
     throw new Error("PROXY_SESSION must contain only letters, numbers, and dashes (up to 32 characters)")
   }
+  if (config.proxySession && config.proxySessionDuration > 30) {
+    throw new Error("PROXY_SESSION_DURATION must be between 1 and 30 minutes")
+  }
   if (config.captcha && !config.enableStealth) {
     throw new Error("CAPTCHA requires ENABLE_STEALTH=1")
   }

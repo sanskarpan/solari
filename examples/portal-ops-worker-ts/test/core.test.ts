@@ -50,6 +50,7 @@ test("config requires a live API key but supports explicit dry mode", () => {
   assert.throws(() => loadConfig({ CAPTCHA: "1" }, true), /CAPTCHA requires ENABLE_STEALTH=1/)
   assert.throws(() => loadConfig({ ENABLE_STEALTH: "1", PROXY_TIER: "unknown" }, true), /PROXY_TIER/)
   assert.throws(() => loadConfig({ ENABLE_STEALTH: "1", PROXY_SESSION: "bad session" }, true), /PROXY_SESSION/)
+  assert.throws(() => loadConfig({ ENABLE_STEALTH: "1", PROXY_SESSION: "warm-1", PROXY_SESSION_DURATION: "31" }, true), /between 1 and 30/)
   assert.throws(() => loadConfig({ PORTAL_URL: "https://portal.example.test" }, true), /ALLOW_EXTERNAL_PORTAL=1/)
   assert.throws(() => loadConfig({ PORTAL_URL: "http://portal.example.test", ALLOW_EXTERNAL_PORTAL: "1" }, true), /must use HTTPS/)
   assert.throws(() => loadConfig({ PORTAL_URL: "https://user:password@portal.example.test", ALLOW_EXTERNAL_PORTAL: "1" }, true), /embedded credentials/)
