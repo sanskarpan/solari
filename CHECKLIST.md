@@ -68,6 +68,8 @@ or file evidence. Update this file in the same commit as the completed work.
 - [x] Resolve a preview URL and wait for readiness with bounded polling.
 - [x] Launch the browser with a profile; use stealth/proxy only when explicitly
       enabled for an authorized external portal.
+- [x] Support typed proxy tier/sticky-session and managed CAPTCHA options with
+      validation; keep them disabled by default and cost-free for the fixture.
 - [x] Navigate, authenticate, and download the CSV using the download event.
 - [x] Transfer download bytes to the sandbox with `files.upload`.
 - [x] Snapshot the prepared workspace and create the processing sandbox from the

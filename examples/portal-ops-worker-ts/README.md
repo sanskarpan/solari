@@ -32,6 +32,10 @@ PORTAL_URL=https://portal.example.test/records ALLOW_EXTERNAL_PORTAL=1 npm start
 # Optional: enable browser replay and desktop review.
 RECORDING=1 ENABLE_DESKTOP=1 npm start
 
+# Optional authorized-target browser resilience features. These may incur
+# proxy/CAPTCHA usage; keep disabled for the synthetic fixture.
+ENABLE_STEALTH=1 PROXY_TIER=residential PROXY_SESSION=warm-1 CAPTCHA=1 npm start
+
 # Test-only: force a post-transfer failure and retain a failed manifest.
 FAIL_AFTER_DOWNLOAD=1 npm start
 ```

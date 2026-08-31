@@ -257,7 +257,17 @@ export async function runLiveWorkflow(): Promise<void> {
     const profile = profiles.find((item) => item.name === config.profileName) ?? await browserClient.profiles.create({ name: config.profileName })
     if (config.recording) console.warn("recording enabled: login input may be captured in the replay; treat the replay as sensitive")
     const launchOptions = config.enableStealth
-      ? { profileId: profile.id, recording: config.recording, stealth: true as const, proxy: { country: config.proxyCountry } }
+      ? {
+          profileId: profile.id,
+          recording: config.recording,
+          stealth: true as const,
+          captcha: config.captcha,
+          proxy: {
+            country: config.proxyCountry,
+            tier: config.proxyTier,
+            ...(config.proxySession ? { session: config.proxySession, sessionDuration: config.proxySessionDuration } : {}),
+          },
+        }
       : { profileId: profile.id, recording: config.recording }
     browser = await browserClient.launch(launchOptions)
     browserSessionId = browser.id

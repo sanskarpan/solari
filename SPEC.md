@@ -126,6 +126,10 @@ browser session --download bytes--> host coordinator
 | `CLEANUP_VOLUME` | `0` | Delete the durable volume after the run |
 | `VOLUME_NAME` | `portal-ops-demo` | Reused organization volume |
 | `TIMEOUT_MS` | `300000` | Rolling idle window for VMs |
+| `PROXY_TIER` | `residential` | Managed proxy tier when stealth is enabled |
+| `PROXY_SESSION` | unset | Optional sticky proxy session ID |
+| `PROXY_SESSION_DURATION` | `10` | Sticky session lifetime in minutes |
+| `CAPTCHA` | `0` | Opt-in managed CAPTCHA support; requires stealth |
 
 The default live path uses the synthetic portal and does not spend proxy or
 CAPTCHA credits. External targets must be explicitly supplied and allowlisted by
@@ -143,7 +147,7 @@ Browser calls:
 
 - `new Solari({ apiKey })`
 - `profiles.list/create/save`
-- `launch({ profileId, recording, stealth, proxy })`
+- `launch({ profileId, recording, stealth, captcha, proxy })`
 - `newPage`, `goto`, locators, `waitForEvent("download")`,
   `download.createReadStream`
 - `browser.id`, `browser.close`, `solari.close`

@@ -14,6 +14,10 @@ export interface AppConfig {
   timeoutMs: number
   enableStealth: boolean
   proxyCountry: string
+  proxyTier: "residential" | "static" | "mobile"
+  proxySession?: string | undefined
+  proxySessionDuration: number
+  captcha: boolean
   recording: boolean
   enableDesktop: boolean
   cleanupVolume: boolean
@@ -50,6 +54,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, dryRun = false)
     timeoutMs: positiveInteger("TIMEOUT_MS", env.TIMEOUT_MS, 300_000),
     enableStealth: flag(env.ENABLE_STEALTH),
     proxyCountry: env.PROXY_COUNTRY ?? "us",
+    proxyTier: (env.PROXY_TIER ?? "residential") as AppConfig["proxyTier"],
+    proxySession: env.PROXY_SESSION,
+    proxySessionDuration: positiveInteger("PROXY_SESSION_DURATION", env.PROXY_SESSION_DURATION, 10),
+    captcha: flag(env.CAPTCHA),
     recording: flag(env.RECORDING),
     enableDesktop: flag(env.ENABLE_DESKTOP),
     cleanupVolume: flag(env.CLEANUP_VOLUME),
@@ -61,6 +69,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, dryRun = false)
   }
   if (config.enableStealth && !config.proxyCountry.match(/^[a-z]{2}$/)) {
     throw new Error("PROXY_COUNTRY must be a lowercase two-letter country code")
+  }
+  if (!["residential", "static", "mobile"].includes(config.proxyTier)) {
+    throw new Error("PROXY_TIER must be residential, static, or mobile")
+  }
+  if (config.proxySession && !/^[A-Za-z0-9-]{1,32}$/.test(config.proxySession)) {
+    throw new Error("PROXY_SESSION must contain only letters, numbers, and dashes (up to 32 characters)")
+  }
+  if (config.captcha && !config.enableStealth) {
+    throw new Error("CAPTCHA requires ENABLE_STEALTH=1")
   }
   if (config.portalUrl) {
     let parsed: URL
