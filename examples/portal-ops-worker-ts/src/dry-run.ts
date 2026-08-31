@@ -38,6 +38,7 @@ export async function runDryWorkflow(): Promise<void> {
       `runs/${runId}/normalized/normalized.json`,
       `runs/${runId}/normalized/review.csv`,
       `runs/${runId}/review/index.html`,
+      `runs/${runId}/manifest.json`,
     ],
   })
   await writeFile(join(root, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n")

@@ -109,6 +109,8 @@ or file evidence. Update this file in the same commit as the completed work.
 - [x] `npm test` passes: 12 tests.
 - [x] `npm run dry` passes twice and produces isolated run directories with the
       expected 4/1/3 record counts.
+- [x] Dry-run artifact contract includes raw CSV, normalized JSON, review CSV,
+      HTML, and the manifest itself.
 - [ ] Live fixture run passes with a real API key, if available.
 - [ ] Live preview returns the review page and manifest.
 - [ ] Live volume reattach returns the same manifest.
