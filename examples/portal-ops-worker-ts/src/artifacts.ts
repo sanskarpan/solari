@@ -76,3 +76,41 @@ export function redactError(error: unknown, secrets: string[]): string {
   const message = error instanceof Error ? error.message : String(error)
   return secrets.filter(Boolean).reduce((safe, secret) => safe.split(secret).join("[REDACTED]"), message)
 }
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null
+}
+
+export function validateRunManifest(value: unknown): RunManifest {
+  if (!isObject(value)) throw new Error("manifest must be an object")
+  if (value.schemaVersion !== 1) throw new Error("manifest schemaVersion must be 1")
+  if (typeof value.runId !== "string" || !value.runId) throw new Error("manifest runId must be a non-empty string")
+  if (value.status !== "dry-run" && value.status !== "succeeded" && value.status !== "failed") {
+    throw new Error("manifest status is invalid")
+  }
+  if (!isObject(value.source) || (value.source.kind !== "fixture" && value.source.kind !== "external") || typeof value.source.url !== "string") {
+    throw new Error("manifest source is invalid")
+  }
+  if (typeof value.startedAt !== "string" || typeof value.finishedAt !== "string") {
+    throw new Error("manifest timestamps are invalid")
+  }
+  if (!isObject(value.counts)) {
+    throw new Error("manifest counts are invalid")
+  }
+  const input = value.counts.input
+  const valid = value.counts.valid
+  const invalid = value.counts.invalid
+  if (typeof input !== "number" || typeof valid !== "number" || typeof invalid !== "number" || !Number.isInteger(input) || !Number.isInteger(valid) || !Number.isInteger(invalid)) {
+    throw new Error("manifest counts are invalid")
+  }
+  if (input < 0 || valid < 0 || invalid < 0 || valid + invalid !== input) {
+    throw new Error("manifest counts are inconsistent")
+  }
+  if (!Array.isArray(value.artifacts) || value.artifacts.some((artifact) => typeof artifact !== "string" || !artifact)) {
+    throw new Error("manifest artifacts are invalid")
+  }
+  for (const field of ["browserSessionId", "replayUrl", "desktopScreenshot", "error"]) {
+    if (field in value && typeof value[field] !== "string") throw new Error("manifest " + field + " must be a string")
+  }
+  return value as unknown as RunManifest
+}

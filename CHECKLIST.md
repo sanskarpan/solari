@@ -52,6 +52,8 @@ or file evidence. Update this file in the same commit as the completed work.
 - [x] Implement HTML escaping for review artifacts.
 - [x] Implement run-id and run-directory generation without path traversal.
 - [x] Implement manifest schema and redaction helpers.
+- [x] Runtime-validate persisted manifests, including status, source, counts,
+      artifact paths, timestamps, and optional evidence fields.
 - [x] Add unit tests for happy paths, malformed CSV, duplicate IDs, invalid
       currency/deadline, HTML escaping, and unique run directories.
 - [x] Run `npm test` and mark every corresponding test item done.
@@ -116,7 +118,7 @@ or file evidence. Update this file in the same commit as the completed work.
 - [x] `npm install` from a clean example directory (`npm ci` in a temporary
       copy) succeeds with zero reported vulnerabilities.
 - [x] `npm run typecheck` passes.
-- [x] `npm test` passes: 16 tests.
+- [x] `npm test` passes: 17 tests.
 - [x] `npm run dry` passes twice and produces isolated run directories with the
       expected 4/1/3 record counts.
 - [x] Dry-run artifact contract includes raw CSV, normalized JSON, review CSV,

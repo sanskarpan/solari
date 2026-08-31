@@ -1,7 +1,7 @@
 import { Solari, type LaunchOptions } from "@solarisdk/browser"
 import { SolariClient } from "@solarisdk/sdk"
 import type { Desktop, Sandbox } from "@solarisdk/sdk"
-import { buildManifest, buildReviewHtml, makeRunId, redactError } from "./artifacts.js"
+import { buildManifest, buildReviewHtml, makeRunId, redactError, validateRunManifest } from "./artifacts.js"
 import { loadConfig, type AppConfig } from "./config.js"
 import { parsePortalCsv } from "./csv.js"
 import { FIXTURE_PORTAL_SCRIPT, startFixture } from "./fixture.js"
@@ -339,7 +339,7 @@ export async function runLiveWorkflow(): Promise<void> {
     console.log(`review: ${reviewPreview.url}/index.html`)
     verifier = await client.sandboxes.create({ template: "base", volumes: [volumeMount], timeoutMs: config.timeoutMs, lifecycle: { onTimeout: "kill" } })
     await verifier.connect()
-    const persisted = JSON.parse(await verifier.files.readText(`${runRoot}/manifest.json`)) as typeof manifest
+    const persisted = validateRunManifest(JSON.parse(await verifier.files.readText(`${runRoot}/manifest.json`)))
     if (persisted.runId !== runId) throw new Error("volume persistence check returned the wrong run")
     console.log(`volume persistence: confirmed ${persisted.artifacts.length} artifacts`)
     await verifier.kill()

@@ -5,7 +5,7 @@ import { join } from "node:path"
 import { spawn } from "node:child_process"
 import { test } from "node:test"
 import { parsePortalCsv, recordsToCsv } from "../src/csv.js"
-import { buildManifest, buildReviewHtml, escapeHtml, makeRunId, redactError } from "../src/artifacts.js"
+import { buildManifest, buildReviewHtml, escapeHtml, makeRunId, redactError, validateRunManifest } from "../src/artifacts.js"
 import { loadConfig } from "../src/config.js"
 import { buildLaunchOptions, cleanupLiveResources, downloadBytes, pollReplayUrl, pythonNormalizeCode, safePortalUrl } from "../src/live.js"
 import { normalizeCsv, normalizeRecords, sampleRecords, validateNormalizedRecords } from "../src/normalize.js"
@@ -151,6 +151,18 @@ test("failed manifests retain the error contract without credentials", () => {
   assert.equal(manifest.status, "failed")
   assert.equal(manifest.error, "login failed for [REDACTED] with [REDACTED]")
   assert.deepEqual(manifest.counts, { input: 0, valid: 0, invalid: 0 })
+})
+
+test("persisted manifests are runtime-validated before volume verification", () => {
+  const valid = buildManifest({
+    runId: "run-1", status: "succeeded", sourceUrl: "fixture://portal",
+    startedAt: "2026-09-01T00:00:00.000Z", finishedAt: "2026-09-01T00:00:01.000Z",
+    records: [], artifacts: ["runs/run-1/manifest.json"],
+  })
+  assert.deepEqual(validateRunManifest(valid), valid)
+  assert.throws(() => validateRunManifest({ ...valid, counts: { input: 2, valid: 2, invalid: 2 } }), /inconsistent/)
+  assert.throws(() => validateRunManifest({ ...valid, artifacts: [""] }), /artifacts/)
+  assert.throws(() => validateRunManifest({ ...valid, status: "unknown" }), /status/)
 })
 
 test("cleanup attempts every resource even when one teardown fails", async () => {
