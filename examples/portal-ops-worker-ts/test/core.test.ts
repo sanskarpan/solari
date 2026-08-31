@@ -32,6 +32,7 @@ test("normalized sandbox output is runtime-validated before persistence", () => 
   assert.throws(() => validateNormalizedRecords([{ ...normalized[0], budgetCents: -1 }]), /budgetCents/)
   assert.throws(() => validateNormalizedRecords([{ ...normalized[0], documents: ["ok", 1] }]), /documents/)
   assert.throws(() => validateNormalizedRecords([{ ...normalized[0], validationErrors: "bad" }]), /validationErrors/)
+  assert.throws(() => validateNormalizedRecords([{ ...normalized[0], valid: true, validationErrors: ["contradiction"] }]), /inconsistent/)
 })
 
 test("CSV normalization accepts CRLF and currency commas", () => {

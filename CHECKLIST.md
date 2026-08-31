@@ -47,6 +47,8 @@ or file evidence. Update this file in the same commit as the completed work.
       duplicate IDs, and invalid-row preservation.
 - [x] Runtime-validate sandbox normalized JSON before allowing it into the
       manifest or review artifacts.
+- [x] Reject semantically contradictory normalized records where `valid` does
+      not match the presence of `validationErrors`.
 - [x] Implement HTML escaping for review artifacts.
 - [x] Implement run-id and run-directory generation without path traversal.
 - [x] Implement manifest schema and redaction helpers.

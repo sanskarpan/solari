@@ -81,6 +81,9 @@ export function validateNormalizedRecords(value: unknown): NormalizedRecord[] {
     if (!Array.isArray(item.validationErrors) || item.validationErrors.some((error) => typeof error !== "string")) {
       throw new Error("sandbox normalized record " + index + ".validationErrors must be a string array")
     }
+    if (item.valid !== (item.validationErrors.length === 0)) {
+      throw new Error("sandbox normalized record " + index + " has inconsistent valid and validationErrors fields")
+    }
     return item as unknown as NormalizedRecord
   })
 }
