@@ -22,34 +22,34 @@ or file evidence. Update this file in the same commit as the completed work.
 - [x] Confirm volume writes are per-run/per-worker and race-free.
 - [x] Confirm preview, recording, profile, and desktop security caveats are
       represented.
-- [ ] Commit reviewed specification and checklist.
+- [x] Commit reviewed specification and checklist (`843dcef`).
 
 ## Phase 2 — Example scaffold
 
-- [ ] Create `examples/portal-ops-worker-ts/`.
-- [ ] Add `package.json` with pinned compatible SDK ranges, `tsx`, TypeScript,
+- [x] Create `examples/portal-ops-worker-ts/`.
+- [x] Add `package.json` with pinned compatible SDK ranges, `tsx`, TypeScript,
       `@types/node`, and scripts: `start`, `dry`, `test`, `typecheck`.
-- [ ] Add `.env.example` with safe fixture defaults and explicit live options.
-- [ ] Add README with architecture, run commands, lifecycle gotchas, security
+- [x] Add `.env.example` with safe fixture defaults and explicit live options.
+- [x] Add README with architecture, run commands, lifecycle gotchas, security
       warnings, and external-portal adapter notes.
-- [ ] Add a strict `tsconfig.json`.
-- [ ] Add initial unit-test harness.
-- [ ] Run install and typecheck.
-- [ ] Mark this phase complete and commit it.
+- [x] Add a strict `tsconfig.json`.
+- [x] Add initial unit-test harness.
+- [x] Run install, typecheck, unit tests, dry run, and `git diff --check`.
+- [x] Mark this phase complete and commit it.
 
 ## Phase 3 — Pure workflow core
 
-- [ ] Implement validated config parsing.
-- [ ] Implement CSV parsing with quoted-field support and helpful errors.
-- [ ] Implement deterministic normalization: dates, currency, status, lists,
+- [x] Implement validated config parsing.
+- [x] Implement CSV parsing with quoted-field support and helpful errors.
+- [x] Implement deterministic normalization: dates, currency, status, lists,
       duplicate IDs, and invalid-row preservation.
-- [ ] Implement HTML escaping for review artifacts.
-- [ ] Implement run-id and run-directory generation without path traversal.
-- [ ] Implement manifest schema and redaction helpers.
-- [ ] Add unit tests for happy paths, malformed CSV, duplicate IDs, invalid
+- [x] Implement HTML escaping for review artifacts.
+- [x] Implement run-id and run-directory generation without path traversal.
+- [x] Implement manifest schema and redaction helpers.
+- [x] Add unit tests for happy paths, malformed CSV, duplicate IDs, invalid
       currency/deadline, HTML escaping, and unique run directories.
-- [ ] Run `npm test` and mark every corresponding test item done.
-- [ ] Commit the pure workflow core.
+- [x] Run `npm test` and mark every corresponding test item done.
+- [x] Commit the pure workflow core.
 
 ## Phase 4 — Deterministic fixture portal
 
