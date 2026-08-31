@@ -20,6 +20,11 @@ export interface NormalizedRecord {
   validationErrors: string[]
 }
 
+export interface DesktopReview {
+  status: "not-requested" | "pending" | "succeeded" | "skipped"
+  reason?: string
+}
+
 export interface RunManifest {
   schemaVersion: 1
   runId: string
@@ -32,5 +37,6 @@ export interface RunManifest {
   browserSessionId?: string
   replayUrl?: string
   desktopScreenshot?: string
+  desktopReview?: DesktopReview
   error?: string
 }

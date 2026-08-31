@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto"
-import type { NormalizedRecord, RunManifest } from "./types.js"
+import type { DesktopReview, NormalizedRecord, RunManifest } from "./types.js"
 
 export function makeRunId(now = new Date()): string {
   const stamp = now.toISOString().replace(/[-:.TZ]/g, "").slice(0, 14)
@@ -49,7 +49,8 @@ export function buildManifest(input: {
   artifacts: string[]
   browserSessionId?: string | undefined
   replayUrl?: string | undefined
-  desktopScreenshot?: string
+  desktopScreenshot?: string | undefined
+  desktopReview?: DesktopReview | undefined
   error?: string
 }): RunManifest {
   const manifest: RunManifest = {
@@ -69,6 +70,7 @@ export function buildManifest(input: {
   if (input.browserSessionId) manifest.browserSessionId = input.browserSessionId
   if (input.replayUrl) manifest.replayUrl = input.replayUrl
   if (input.desktopScreenshot) manifest.desktopScreenshot = input.desktopScreenshot
+  if (input.desktopReview) manifest.desktopReview = input.desktopReview
   if (input.error) manifest.error = input.error
   return manifest
 }
@@ -117,6 +119,14 @@ export function validateRunManifest(value: unknown): RunManifest {
   }
   for (const field of ["browserSessionId", "replayUrl", "desktopScreenshot", "error"]) {
     if (field in value && typeof value[field] !== "string") throw new Error("manifest " + field + " must be a string")
+  }
+  if ("desktopReview" in value) {
+    if (!isObject(value.desktopReview) || typeof value.desktopReview.status !== "string" || !["not-requested", "pending", "succeeded", "skipped"].includes(value.desktopReview.status)) {
+      throw new Error("manifest desktopReview is invalid")
+    }
+    if ("reason" in value.desktopReview && typeof value.desktopReview.reason !== "string") {
+      throw new Error("manifest desktopReview.reason must be a string")
+    }
   }
   return value as unknown as RunManifest
 }

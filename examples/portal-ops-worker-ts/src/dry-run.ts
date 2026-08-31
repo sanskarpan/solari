@@ -33,6 +33,7 @@ export async function runDryWorkflow(): Promise<void> {
     startedAt: "2026-09-01T00:00:00.000Z",
     finishedAt: "2026-09-01T00:00:01.000Z",
     records: normalized,
+    desktopReview: { status: "not-requested" },
     artifacts: [
       `runs/${runId}/raw/records.csv`,
       `runs/${runId}/normalized/normalized.json`,

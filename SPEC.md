@@ -209,6 +209,9 @@ Run layout:
   manifest.json
 ```
 
+The manifest also records `desktopReview.status` as `not-requested`, `pending`,
+`succeeded`, or `skipped`; skipped reviews include a redacted reason.
+
 ## 9. Reliability and security
 
 - Validate the API key before creating a remote resource in live mode.

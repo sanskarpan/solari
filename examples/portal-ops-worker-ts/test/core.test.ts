@@ -165,6 +165,10 @@ test("persisted manifests are runtime-validated before volume verification", () 
   assert.throws(() => validateRunManifest({ ...valid, finishedAt: "2026-08-31T23:59:59.000Z" }), /timestamps/)
   assert.throws(() => validateRunManifest({ ...valid, artifacts: [""] }), /artifacts/)
   assert.throws(() => validateRunManifest({ ...valid, status: "unknown" }), /status/)
+  assert.throws(() => validateRunManifest({ ...valid, desktopReview: { status: "skipped", reason: 42 } }), /desktopReview/)
+  assert.deepEqual(validateRunManifest({ ...valid, desktopReview: { status: "skipped", reason: "capacity unavailable" } }).desktopReview, {
+    status: "skipped", reason: "capacity unavailable",
+  })
 })
 
 test("cleanup attempts every resource even when one teardown fails", async () => {

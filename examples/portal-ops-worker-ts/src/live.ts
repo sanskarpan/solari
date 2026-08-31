@@ -6,7 +6,7 @@ import { loadConfig, type AppConfig } from "./config.js"
 import { parsePortalCsv } from "./csv.js"
 import { FIXTURE_PORTAL_SCRIPT, startFixture } from "./fixture.js"
 import { normalizeRecords, validateNormalizedRecords } from "./normalize.js"
-import type { NormalizedRecord } from "./types.js"
+import type { NormalizedRecord, RunManifest } from "./types.js"
 
 const BASE_URL = "https://api.getsolari.com"
 
@@ -261,6 +261,7 @@ export async function runLiveWorkflow(): Promise<void> {
   let sourceUrl = "fixture://portal"
   let rawUploaded = false
   let volumeId: string | undefined
+  let desktopReview: RunManifest["desktopReview"] = { status: config.enableDesktop ? "pending" : "not-requested" }
 
   try {
     const volume = await findOrCreateVolume(client, config.volumeName)
@@ -330,7 +331,7 @@ export async function runLiveWorkflow(): Promise<void> {
     processing = undefined
     await workspace.files.write(`${reviewDir}/index.html`, buildReviewHtml(runId, normalized))
     const artifacts = [`runs/${runId}/raw/records.csv`, `runs/${runId}/normalized/normalized.json`, `runs/${runId}/normalized/review.csv`, `runs/${runId}/review/index.html`, `runs/${runId}/manifest.json`]
-    let manifest = buildManifest({ runId, status: "succeeded", sourceUrl, startedAt, finishedAt: new Date().toISOString(), records: normalized, artifacts, browserSessionId, replayUrl: replay })
+    let manifest = buildManifest({ runId, status: "succeeded", sourceUrl, startedAt, finishedAt: new Date().toISOString(), records: normalized, artifacts, browserSessionId, replayUrl: replay, desktopReview })
     await workspace.files.write(`${runRoot}/manifest.json`, JSON.stringify(manifest, null, 2) + "\n")
     await workspace.files.write(`${reviewDir}/manifest.json`, JSON.stringify(manifest, null, 2) + "\n")
     reviewServer = await workspace.commands.start("python3", { args: ["-m", "http.server", "3001", "--directory", reviewDir] })
@@ -348,13 +349,35 @@ export async function runLiveWorkflow(): Promise<void> {
     try {
       desktopResult = await optionalDesktopReview(client, config, activeVolumeId, reviewCsvPath, workspace)
     } catch (error) {
-      console.warn(`desktop review skipped: ${error instanceof Error ? error.message : String(error)}`)
+      const reason = redactError(error, [config.password, config.username, config.apiKey ?? "", config.portalUrl ?? ""])
+      desktopReview = { status: "skipped", reason }
+      console.warn(`desktop review skipped: ${reason}`)
     }
     desktop = desktopResult.desktop
-    if (desktopResult.screenshotPath && desktopResult.desktop) {
-      manifest = buildManifest({ runId, status: "succeeded", sourceUrl, startedAt, finishedAt: new Date().toISOString(), records: normalized, artifacts: [...artifacts, `runs/${runId}/review/desktop-review.png`], browserSessionId, replayUrl: replay, desktopScreenshot: `runs/${runId}/review/desktop-review.png` })
-      await workspace.files.write(`${runRoot}/manifest.json`, JSON.stringify(manifest, null, 2) + "\n")
-      await workspace.files.write(`${reviewDir}/manifest.json`, JSON.stringify(manifest, null, 2) + "\n")
+    if (desktopResult.desktop && desktopResult.screenshotPath) {
+      desktopReview = { status: "succeeded" }
+    } else if (config.enableDesktop && desktopReview?.status === "pending") {
+      desktopReview = { status: "skipped", reason: "desktop review returned no screenshot" }
+    }
+    const desktopArtifact = desktopResult.screenshotPath && desktopResult.desktop
+      ? `runs/${runId}/review/desktop-review.png`
+      : undefined
+    manifest = buildManifest({
+      runId,
+      status: "succeeded",
+      sourceUrl,
+      startedAt,
+      finishedAt: new Date().toISOString(),
+      records: normalized,
+      artifacts: desktopArtifact ? [...artifacts, desktopArtifact] : artifacts,
+      browserSessionId,
+      replayUrl: replay,
+      desktopScreenshot: desktopArtifact,
+      desktopReview,
+    })
+    await workspace.files.write(`${runRoot}/manifest.json`, JSON.stringify(manifest, null, 2) + "\n")
+    await workspace.files.write(`${reviewDir}/manifest.json`, JSON.stringify(manifest, null, 2) + "\n")
+    if (desktopArtifact && desktopResult.desktop) {
       console.log(`desktop screenshot: ${desktopResult.screenshotPath}`)
       console.log(`desktop stream: ${desktopResult.desktop.streamUrl}`)
     }
@@ -379,6 +402,7 @@ export async function runLiveWorkflow(): Promise<void> {
       artifacts: [...failedArtifacts, `runs/${runId}/manifest.json`],
       browserSessionId,
       replayUrl: replay,
+      desktopReview,
       error: redactError(error, [config.password, config.username, config.apiKey ?? "", config.portalUrl ?? ""]),
     })
     if (workspace) {
