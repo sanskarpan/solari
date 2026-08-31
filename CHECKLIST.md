@@ -79,6 +79,8 @@ or file evidence. Update this file in the same commit as the completed work.
 - [x] Serve the review directory with `previewUrl` and verify it from the host.
 - [x] Prove volume persistence by reading the manifest from a fresh sandbox.
 - [x] Clean up browser, processing sandbox, and workspace in all paths.
+- [x] Keep volume discovery inside the same lifecycle boundary so client cleanup
+      also runs when volume list/create fails.
 - [x] Implement best-effort browser failure screenshots into the retained run
       directory; screenshot execution remains part of the live environment gate.
 - [x] Mark completed implementation items in this checklist and commit the live
