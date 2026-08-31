@@ -12,8 +12,8 @@ for human verification.
 The first implementation uses a deterministic synthetic portal served from a
 Solari sandbox. This keeps the example runnable without depending on a third-
 party portal, CAPTCHA, or unstable DOM. An authorized external portal can be
-selected
-with `PORTAL_URL` and selector overrides that preserve the same artifact
+selected with `PORTAL_URL` and selector overrides that preserve the same
+artifact
 contract.
 
 ## 2. Product thesis

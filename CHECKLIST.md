@@ -32,6 +32,8 @@ or file evidence. Update this file in the same commit as the completed work.
 - [x] Add `.env.example` with safe fixture defaults and explicit live options.
 - [x] Add README with architecture, run commands, lifecycle gotchas, security
       warnings, and external-portal adapter notes.
+- [x] Register the workflow in the root browser, sandbox, and desktop example
+      catalog.
 - [x] Add a strict `tsconfig.json`.
 - [x] Add initial unit-test harness.
 - [x] Run install, typecheck, unit tests, dry run, and `git diff --check`.

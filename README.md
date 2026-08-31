@@ -34,13 +34,14 @@ past. Copy one into your project and change the parts you care about.
 | Example | Language | What it shows |
 | --- | --- | --- |
 | [desktop-computer-use-py](examples/desktop-computer-use-py) | Python | Screenshot, click, and type on a Linux GUI |
+| [portal-ops-worker-ts](examples/portal-ops-worker-ts) | TypeScript | Optional LibreOffice review of a validated decision pack |
 
 ## Running an example
 
 Each directory is self-contained.
 
 ```bash
-git clone https://github.com/solari-sdk/solari-cookbook.git
+git clone https://github.com/sanskarpan/solari.git
 cd solari-cookbook/examples/browser-quickstart-ts
 
 npm install                          # or: pip install -r requirements.txt
