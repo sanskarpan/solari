@@ -70,6 +70,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, dryRun = false)
       throw new Error("PORTAL_URL must be a valid HTTPS URL")
     }
     if (parsed.protocol !== "https:") throw new Error("PORTAL_URL must use HTTPS")
+    if (parsed.username || parsed.password) throw new Error("PORTAL_URL must not contain embedded credentials")
     if (!config.allowExternalPortal) throw new Error("PORTAL_URL requires ALLOW_EXTERNAL_PORTAL=1 for an authorized target")
   }
   return config

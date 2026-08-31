@@ -48,6 +48,7 @@ test("config requires a live API key but supports explicit dry mode", () => {
   assert.equal(loadConfig({ FAIL_AFTER_DOWNLOAD: "1" }, true).failAfterDownload, true)
   assert.throws(() => loadConfig({ PORTAL_URL: "https://portal.example.test" }, true), /ALLOW_EXTERNAL_PORTAL=1/)
   assert.throws(() => loadConfig({ PORTAL_URL: "http://portal.example.test", ALLOW_EXTERNAL_PORTAL: "1" }, true), /must use HTTPS/)
+  assert.throws(() => loadConfig({ PORTAL_URL: "https://user:password@portal.example.test", ALLOW_EXTERNAL_PORTAL: "1" }, true), /embedded credentials/)
   const external = loadConfig({ PORTAL_URL: "https://portal.example.test", ALLOW_EXTERNAL_PORTAL: "1" }, true)
   assert.equal(external.portalUrl, "https://portal.example.test")
 })

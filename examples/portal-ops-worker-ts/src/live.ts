@@ -12,6 +12,11 @@ const BASE_URL = "https://api.getsolari.com"
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
+function safePortalUrl(rawUrl: string): string {
+  const parsed = new URL(rawUrl)
+  return parsed.origin + (parsed.pathname || "/")
+}
+
 async function waitForHttp(url: string, timeoutMs = 30_000): Promise<void> {
   const deadline = Date.now() + timeoutMs
   let lastStatus = "no response"
@@ -237,8 +242,8 @@ export async function runLiveWorkflow(): Promise<void> {
     let portalUrl: string
     if (config.portalUrl) {
       portalUrl = config.portalUrl
-      sourceUrl = portalUrl
-      console.log(`external portal: ${portalUrl}`)
+      sourceUrl = safePortalUrl(portalUrl)
+      console.log(`external portal: ${sourceUrl}`)
     } else {
       portalServer = await startFixture(workspace, "/tmp/portal-fixture.py", false)
       const portalPreview = await workspace.previewUrl(3000)
@@ -332,7 +337,7 @@ export async function runLiveWorkflow(): Promise<void> {
         await workspace.files.write(`${reviewDir}/browser-failure.png`, await page.screenshot({ fullPage: true }))
         failedArtifacts.push(`runs/${runId}/review/browser-failure.png`)
       } catch (screenshotError) {
-        console.warn(`browser failure screenshot unavailable: ${redactError(screenshotError, [config.password, config.username, config.apiKey ?? ""])}`)
+        console.warn(`browser failure screenshot unavailable: ${redactError(screenshotError, [config.password, config.username, config.apiKey ?? "", config.portalUrl ?? ""])}`)
       }
     }
     const failedManifest = buildManifest({
@@ -345,7 +350,7 @@ export async function runLiveWorkflow(): Promise<void> {
       artifacts: [...failedArtifacts, `runs/${runId}/manifest.json`],
       browserSessionId,
       replayUrl: replay,
-      error: redactError(error, [config.password, config.username, config.apiKey ?? ""]),
+      error: redactError(error, [config.password, config.username, config.apiKey ?? "", config.portalUrl ?? ""]),
     })
     if (workspace) {
       try {
@@ -354,7 +359,7 @@ export async function runLiveWorkflow(): Promise<void> {
         if (normalized.length) await workspace.files.write(`${reviewDir}/index.html`, buildReviewHtml(runId, normalized))
         console.error(`workflow failed; retained artifacts: ${runRoot}`)
       } catch (manifestError) {
-        console.error(`workflow failed and failed-manifest write also failed: ${redactError(manifestError, [config.password, config.username, config.apiKey ?? ""])}`)
+        console.error(`workflow failed and failed-manifest write also failed: ${redactError(manifestError, [config.password, config.username, config.apiKey ?? "", config.portalUrl ?? ""])}`)
       }
     }
     throw error
