@@ -202,7 +202,7 @@ test("the sandbox Python normalizer matches the local contract", async () => {
 test("run ids are filesystem-safe and unique enough for concurrent runs", () => {
   const a = makeRunId(new Date("2026-09-01T00:00:00.000Z"))
   const b = makeRunId(new Date("2026-09-01T00:00:00.000Z"))
-  assert.match(a, /^20260901000000-[a-z0-9]+$/)
+  assert.match(a, /^20260901000000-[a-f0-9]{12}$/)
   assert.notEqual(a, b)
   assert.equal(a.includes("/"), false)
 })

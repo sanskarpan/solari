@@ -1,8 +1,9 @@
+import { randomBytes } from "node:crypto"
 import type { NormalizedRecord, RunManifest } from "./types.js"
 
 export function makeRunId(now = new Date()): string {
   const stamp = now.toISOString().replace(/[-:.TZ]/g, "").slice(0, 14)
-  const suffix = Math.random().toString(36).slice(2, 8)
+  const suffix = randomBytes(6).toString("hex")
   return `${stamp}-${suffix}`
 }
 

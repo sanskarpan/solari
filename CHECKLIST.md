@@ -51,6 +51,8 @@ or file evidence. Update this file in the same commit as the completed work.
       not match the presence of `validationErrors`.
 - [x] Implement HTML escaping for review artifacts.
 - [x] Implement run-id and run-directory generation without path traversal.
+- [x] Use cryptographically generated run-id suffixes to reduce concurrent
+      directory collision risk.
 - [x] Implement manifest schema and redaction helpers.
 - [x] Runtime-validate persisted manifests, including status, source, counts,
       artifact paths, timestamps, and optional evidence fields.
