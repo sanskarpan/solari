@@ -12,7 +12,7 @@ for human verification.
 The first implementation uses a deterministic synthetic portal served from a
 Solari sandbox. This keeps the example runnable without depending on a third-
 party portal, CAPTCHA, or unstable DOM. An external portal can be supplied later
-with `PORTAL_URL` and an adapter that preserves the same artifact contract.
+with `PORTAL_URL` and selector overrides that preserve the same artifact contract.
 
 ## 2. Product thesis
 
@@ -59,7 +59,8 @@ must not frame unauthorized access or bot-defense bypass as the product value.
 
 ## 4. User journey
 
-1. Start the fixture portal in a sandbox and obtain a preview URL.
+1. Start the fixture portal in a sandbox and obtain a preview URL, unless an
+   authorized external `PORTAL_URL` is configured.
 2. Launch a Solari browser against the portal URL.
 3. Log in if required, or reuse a saved profile when the origin is stable.
 4. Download `records.csv` with `waitForEvent("download")`.

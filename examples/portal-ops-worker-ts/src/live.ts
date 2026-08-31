@@ -143,7 +143,7 @@ export async function cleanupLiveResources(resources: {
   processing?: Killable | undefined
   workspace?: Killable | undefined
   cleanupVolume: boolean
-  volumeId?: string
+  volumeId?: string | undefined
   deleteVolume: (volumeId: string) => Promise<unknown>
 }): Promise<void> {
   await resources.browser?.close().catch(() => undefined)
@@ -212,9 +212,6 @@ export async function runLiveWorkflow(): Promise<void> {
   const startedAt = new Date().toISOString()
   const client = new SolariClient({ apiKey: config.apiKey!, baseUrl: BASE_URL })
   const browserClient = new Solari({ apiKey: config.apiKey!, baseUrl: BASE_URL })
-  const volume = await findOrCreateVolume(client, config.volumeName)
-  const volumeId = volume.volumeId
-  const volumeMount = { volumeId, path: "/data" }
   const runRoot = `/data/runs/${runId}`
   const rawPath = `${runRoot}/raw/records.csv`
   const normalizedPath = `${runRoot}/normalized/normalized.json`
@@ -233,8 +230,13 @@ export async function runLiveWorkflow(): Promise<void> {
   let normalized: NormalizedRecord[] = []
   let sourceUrl = "fixture://portal"
   let rawUploaded = false
+  let volumeId: string | undefined
 
   try {
+    const volume = await findOrCreateVolume(client, config.volumeName)
+    volumeId = volume.volumeId
+    const activeVolumeId = volume.volumeId
+    const volumeMount = { volumeId: activeVolumeId, path: "/data" }
     workspace = await client.sandboxes.create({ template: "base", volumes: [volumeMount], timeoutMs: config.timeoutMs, lifecycle: { onTimeout: "kill" } })
     await workspace.connect()
     await workspace.files.write("/tmp/portal-fixture.py", FIXTURE_PORTAL_SCRIPT)
@@ -296,7 +298,7 @@ export async function runLiveWorkflow(): Promise<void> {
       if (replay) console.log(`replay: ${replay}`)
     }
 
-    processing = await createProcessingSandbox(client, snapshotId, volumeId, config.timeoutMs)
+    processing = await createProcessingSandbox(client, snapshotId, activeVolumeId, config.timeoutMs)
     await processing.commands.run("mkdir", { args: ["-p", `${runRoot}/raw`, `${runRoot}/normalized`, reviewDir] })
     await processing.files.upload(rawPath, csvBytes)
     rawUploaded = true
@@ -327,7 +329,7 @@ export async function runLiveWorkflow(): Promise<void> {
     verifier = undefined
     let desktopResult: { desktop?: Desktop; screenshotPath?: string } = {}
     try {
-      desktopResult = await optionalDesktopReview(client, config, volumeId, reviewCsvPath, workspace)
+      desktopResult = await optionalDesktopReview(client, config, activeVolumeId, reviewCsvPath, workspace)
     } catch (error) {
       console.warn(`desktop review skipped: ${error instanceof Error ? error.message : String(error)}`)
     }
