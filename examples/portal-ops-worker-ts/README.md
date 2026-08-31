@@ -7,9 +7,10 @@ an isolated processing sandbox, normalizes the records with `runCode`, persists
 artifacts on a volume, and serves a review page with `previewUrl`. An optional
 desktop stage opens the CSV in LibreOffice for human verification.
 
-The fixture is intentionally deterministic. To connect an external portal,
-replace the fixture adapter and set `PORTAL_URL`; only use targets you are
-authorized to automate and add an allowlist before production use.
+The fixture is intentionally deterministic. To connect an authorized external
+portal, set `PORTAL_URL=https://...` and `ALLOW_EXTERNAL_PORTAL=1`, then override
+the four `PORTAL_*_SELECTOR` values if its login/download DOM differs. Keep an
+allowlist and an approval boundary before production use.
 
 ## Run
 
@@ -24,6 +25,9 @@ npm run dry
 # Live Solari fixture workflow.
 export SOLARI_API_KEY=slr_live_...
 npm start
+
+# Authorized external HTTPS portal with the same workflow.
+PORTAL_URL=https://portal.example.test/records ALLOW_EXTERNAL_PORTAL=1 npm start
 
 # Optional: enable browser replay and desktop review.
 RECORDING=1 ENABLE_DESKTOP=1 npm start

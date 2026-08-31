@@ -132,7 +132,8 @@ or file evidence. Update this file in the same commit as the completed work.
 
 ## Deferred product work
 
-- [ ] Authorized procurement portal adapter.
+- [ ] Portal-specific procurement adapter with allowlist and target-specific
+      authentication/readiness checks.
 - [ ] External scheduler, queue, webhook, tenant auth, and billing.
 - [ ] PDF/OCR extraction and confidence scoring.
 - [ ] Authenticated preview/artifact gateway.

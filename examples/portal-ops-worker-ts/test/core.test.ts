@@ -46,6 +46,10 @@ test("config requires a live API key but supports explicit dry mode", () => {
   assert.equal(config.enableStealth, true)
   assert.equal(config.failAfterDownload, false)
   assert.equal(loadConfig({ FAIL_AFTER_DOWNLOAD: "1" }, true).failAfterDownload, true)
+  assert.throws(() => loadConfig({ PORTAL_URL: "https://portal.example.test" }, true), /ALLOW_EXTERNAL_PORTAL=1/)
+  assert.throws(() => loadConfig({ PORTAL_URL: "http://portal.example.test", ALLOW_EXTERNAL_PORTAL: "1" }, true), /must use HTTPS/)
+  const external = loadConfig({ PORTAL_URL: "https://portal.example.test", ALLOW_EXTERNAL_PORTAL: "1" }, true)
+  assert.equal(external.portalUrl, "https://portal.example.test")
 })
 
 test("HTML output escapes untrusted portal content", () => {

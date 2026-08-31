@@ -1,8 +1,14 @@
 export interface AppConfig {
   apiKey?: string | undefined
   dryRun: boolean
+  portalUrl?: string | undefined
+  allowExternalPortal: boolean
   username: string
   password: string
+  usernameSelector: string
+  passwordSelector: string
+  loginSubmitSelector: string
+  downloadSelector: string
   profileName: string
   volumeName: string
   timeoutMs: number
@@ -31,8 +37,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, dryRun = false)
   const config: AppConfig = {
     apiKey: env.SOLARI_API_KEY,
     dryRun: dryRun || flag(env.DRY_RUN),
+    portalUrl: env.PORTAL_URL,
+    allowExternalPortal: flag(env.ALLOW_EXTERNAL_PORTAL),
     username: env.PORTAL_USERNAME ?? "demo-user",
     password: env.PORTAL_PASSWORD ?? "demo-password",
+    usernameSelector: env.PORTAL_USERNAME_SELECTOR ?? "input[name=username]",
+    passwordSelector: env.PORTAL_PASSWORD_SELECTOR ?? "input[name=password]",
+    loginSubmitSelector: env.PORTAL_LOGIN_SUBMIT_SELECTOR ?? "button[type=submit]",
+    downloadSelector: env.PORTAL_DOWNLOAD_SELECTOR ?? "#download",
     profileName: env.PROFILE_NAME ?? "portal-ops-demo",
     volumeName: env.VOLUME_NAME ?? "portal-ops-demo",
     timeoutMs: positiveInteger("TIMEOUT_MS", env.TIMEOUT_MS, 300_000),
@@ -49,6 +61,16 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, dryRun = false)
   }
   if (config.enableStealth && !config.proxyCountry.match(/^[a-z]{2}$/)) {
     throw new Error("PROXY_COUNTRY must be a lowercase two-letter country code")
+  }
+  if (config.portalUrl) {
+    let parsed: URL
+    try {
+      parsed = new URL(config.portalUrl)
+    } catch {
+      throw new Error("PORTAL_URL must be a valid HTTPS URL")
+    }
+    if (parsed.protocol !== "https:") throw new Error("PORTAL_URL must use HTTPS")
+    if (!config.allowExternalPortal) throw new Error("PORTAL_URL requires ALLOW_EXTERNAL_PORTAL=1 for an authorized target")
   }
   return config
 }

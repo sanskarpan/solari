@@ -234,11 +234,19 @@ export async function runLiveWorkflow(): Promise<void> {
     await workspace.connect()
     await workspace.files.write("/tmp/portal-fixture.py", FIXTURE_PORTAL_SCRIPT)
     const snapshotId = await workspace.snapshot("portal-ops-golden")
-    portalServer = await startFixture(workspace, "/tmp/portal-fixture.py", false)
-    const portalPreview = await workspace.previewUrl(3000)
-    await waitForHttp(portalPreview.url)
-    sourceUrl = `fixture://${portalPreview.url}`
-    console.log(`fixture portal: ${portalPreview.url}`)
+    let portalUrl: string
+    if (config.portalUrl) {
+      portalUrl = config.portalUrl
+      sourceUrl = portalUrl
+      console.log(`external portal: ${portalUrl}`)
+    } else {
+      portalServer = await startFixture(workspace, "/tmp/portal-fixture.py", false)
+      const portalPreview = await workspace.previewUrl(3000)
+      await waitForHttp(portalPreview.url)
+      portalUrl = portalPreview.url
+      sourceUrl = `fixture://${portalPreview.url}`
+      console.log(`fixture portal: ${portalPreview.url}`)
+    }
 
     const profiles = await browserClient.profiles.list()
     const profile = profiles.find((item) => item.name === config.profileName) ?? await browserClient.profiles.create({ name: config.profileName })
@@ -249,16 +257,18 @@ export async function runLiveWorkflow(): Promise<void> {
     browser = await browserClient.launch(launchOptions)
     browserSessionId = browser.id
     page = await browser.newPage()
-    await page.goto(portalPreview.url, { waitUntil: "domcontentloaded" })
-    if (!page.url().endsWith("/records")) {
-      await page.locator("input[name=username]").fill(config.username)
-      await page.locator("input[name=password]").fill(config.password)
-      await page.locator("button[type=submit]").click()
-      await page.waitForURL("**/records")
+    await page.goto(portalUrl, { waitUntil: "domcontentloaded" })
+    const usernameInput = page.locator(config.usernameSelector).first()
+    if (await usernameInput.isVisible()) {
+      await usernameInput.fill(config.username)
+      await page.locator(config.passwordSelector).fill(config.password)
+      await page.locator(config.loginSubmitSelector).click()
+      if (!config.portalUrl) await page.waitForURL("**/records")
     }
+    await page.locator(config.downloadSelector).waitFor({ state: "visible" })
     const [download] = await Promise.all([
       page.waitForEvent("download"),
-      page.locator("#download").click(),
+      page.locator(config.downloadSelector).click(),
     ])
     const csvBytes = await downloadBytes(download)
     await browserClient.profiles.save(profile.id, await page.context().storageState())

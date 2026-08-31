@@ -31,6 +31,8 @@ must not frame unauthorized access or bot-defense bypass as the product value.
 
 - A TypeScript example at `examples/portal-ops-worker-ts`.
 - A safe synthetic portal with login, a records page, and a downloadable CSV.
+- A configurable authorized external HTTPS portal adapter with selector
+  overrides, guarded by an explicit opt-in.
 - A browser worker using the Playwright-shaped Solari browser API.
 - Profile create/list/attach/save lifecycle.
 - Browser download transfer through the host into a sandbox; no assumption that
@@ -108,9 +110,14 @@ browser session --download bytes--> host coordinator
 |---|---|---|
 | `SOLARI_API_KEY` | required for live mode | Solari bearer key |
 | `DRY_RUN` | `0` | Run local contract tests without Solari |
-| `PORTAL_URL` | fixture URL created at runtime | External portal origin |
+| `PORTAL_URL` | fixture URL created at runtime | Optional authorized external HTTPS portal origin |
+| `ALLOW_EXTERNAL_PORTAL` | `0` | Required explicit opt-in for `PORTAL_URL` |
 | `PORTAL_USERNAME` | `demo-user` | Fixture-only login value |
 | `PORTAL_PASSWORD` | `demo-password` | Fixture-only login value |
+| `PORTAL_USERNAME_SELECTOR` | `input[name=username]` | Login username selector |
+| `PORTAL_PASSWORD_SELECTOR` | `input[name=password]` | Login password selector |
+| `PORTAL_LOGIN_SUBMIT_SELECTOR` | `button[type=submit]` | Login submit selector |
+| `PORTAL_DOWNLOAD_SELECTOR` | `#download` | CSV download selector |
 | `PROFILE_NAME` | `portal-ops-demo` | Saved browser profile name |
 | `ENABLE_STEALTH` | `0` | Opt-in for an authorized external target |
 | `PROXY_COUNTRY` | `us` | Used only when stealth is enabled |
@@ -228,7 +235,8 @@ Run layout:
 
 ## 11. Future product work
 
-- Replace the fixture with one authorized procurement portal adapter.
+- Add portal-specific adapters with stronger auth flows, selector contracts,
+  allowlists, and target-specific readiness checks.
 - Add a service-level queue, cron trigger, tenant auth, and webhook delivery.
 - Add PDF/OCR extraction in a custom template with explicit confidence scores.
 - Add reviewer actions that are idempotent and require confirmation before any
