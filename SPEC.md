@@ -161,7 +161,7 @@ copy Python method names into TypeScript.
 Input CSV columns:
 
 ```text
-record_id,title,organization,deadline,budget,status,documents
+recordId,title,organization,deadline,budget,status,documents
 ```
 
 Normalized record fields:

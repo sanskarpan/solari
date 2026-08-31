@@ -1,4 +1,3 @@
-import { writeFile } from "node:fs/promises"
 import { Solari } from "@solarisdk/browser"
 import { SolariClient } from "@solarisdk/sdk"
 import type { Desktop, Sandbox } from "@solarisdk/sdk"
@@ -127,6 +126,7 @@ async function replayUrl(client: Solari, sessionId: string): Promise<string | un
 
 type Closable = { close(): Promise<unknown> }
 type Killable = { kill(): Promise<unknown> }
+type BrowserPage = Awaited<ReturnType<Awaited<ReturnType<Solari["launch"]>>["newPage"]>>
 
 export async function cleanupLiveResources(resources: {
   browser?: Closable | undefined
@@ -224,6 +224,7 @@ export async function runLiveWorkflow(): Promise<void> {
   let desktop: Desktop | undefined
   let browserSessionId: string | undefined
   let replay: string | undefined
+  let page: BrowserPage | undefined
   let normalized: NormalizedRecord[] = []
   let sourceUrl = "fixture://portal"
   let rawUploaded = false
@@ -247,7 +248,7 @@ export async function runLiveWorkflow(): Promise<void> {
       : { profileId: profile.id, recording: config.recording }
     browser = await browserClient.launch(launchOptions)
     browserSessionId = browser.id
-    const page = await browser.newPage()
+    page = await browser.newPage()
     await page.goto(portalPreview.url, { waitUntil: "domcontentloaded" })
     if (!page.url().endsWith("/records")) {
       await page.locator("input[name=username]").fill(config.username)
@@ -315,6 +316,15 @@ export async function runLiveWorkflow(): Promise<void> {
     }
   } catch (error) {
     const failedArtifacts = rawUploaded ? [`runs/${runId}/raw/records.csv`] : []
+    if (page && workspace) {
+      try {
+        await workspace.commands.run("mkdir", { args: ["-p", reviewDir] })
+        await workspace.files.write(`${reviewDir}/browser-failure.png`, await page.screenshot({ fullPage: true }))
+        failedArtifacts.push(`runs/${runId}/review/browser-failure.png`)
+      } catch (screenshotError) {
+        console.warn(`browser failure screenshot unavailable: ${redactError(screenshotError, [config.password, config.username, config.apiKey ?? ""])}`)
+      }
+    }
     const failedManifest = buildManifest({
       runId,
       status: "failed",
