@@ -247,6 +247,7 @@ export async function runLiveWorkflow(): Promise<void> {
   const normalizedPath = `${runRoot}/normalized/normalized.json`
   const reviewCsvPath = `${runRoot}/normalized/review.csv`
   const reviewDir = `${runRoot}/review`
+  console.log(`run: ${runRoot}`)
   let workspace: Sandbox | undefined
   let processing: Sandbox | undefined
   let verifier: Sandbox | undefined
@@ -377,6 +378,7 @@ export async function runLiveWorkflow(): Promise<void> {
     })
     await workspace.files.write(`${runRoot}/manifest.json`, JSON.stringify(manifest, null, 2) + "\n")
     await workspace.files.write(`${reviewDir}/manifest.json`, JSON.stringify(manifest, null, 2) + "\n")
+    console.log(`desktop review: ${desktopReview?.status ?? "unknown"}`)
     if (desktopArtifact && desktopResult.desktop) {
       console.log(`desktop screenshot: ${desktopResult.screenshotPath}`)
       console.log(`desktop stream: ${desktopResult.desktop.streamUrl}`)
