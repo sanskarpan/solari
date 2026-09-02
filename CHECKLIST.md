@@ -148,6 +148,10 @@ or file evidence. Update this file in the same commit as the completed work.
 - [x] Source/log review and live output contain no API key, password, cookie, or
       proxy credential emission; the supplied key was process-only and never
       written to the repository or volume artifacts.
+- [x] Post-redaction PR-branch smoke run `20260902121030-41825823c00d`
+      completed with the safe fixture URL, confirmed 5 artifacts after fresh
+      volume reattachment, and removed its temporary volume with
+      `CLEANUP_VOLUME=1`.
 - [x] `git diff --check` passes.
 - [x] Mark each offline-verified gate and commit the hardening changes.
 
