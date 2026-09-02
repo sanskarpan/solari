@@ -211,7 +211,7 @@ function isConcurrencyLimit(error: unknown): boolean {
   return candidate.status === 429 || candidate.code === "ConcurrencyLimitExceeded"
 }
 
-async function optionalDesktopReview(client: SolariClient, config: AppConfig, volumeId: string, reviewCsv: string, workspace: Sandbox): Promise<{ desktop?: Desktop; screenshotPath?: string }> {
+async function optionalDesktopReview(client: SolariClient, config: AppConfig, volumeId: string, reviewCsv: string): Promise<{ desktop?: Desktop; screenshotPath?: string }> {
   if (!config.enableDesktop) return {}
   const desktop = await client.sandboxes.createDesktop({
     template: "office",
@@ -234,7 +234,7 @@ async function optionalDesktopReview(client: SolariClient, config: AppConfig, vo
     await desktop.open("libreoffice", [reviewCsv])
     await sleep(4_000)
     const screenshotPath = reviewCsv.replace(/\/normalized\/review\.csv$/, "/review/desktop-review.png")
-    await workspace.files.write(screenshotPath, await desktop.screenshot({ format: "png" }))
+    await desktop.fs.write(screenshotPath, await desktop.screenshot({ format: "png" }))
     return { desktop, screenshotPath }
   } catch (error) {
     await desktop.kill().catch(() => undefined)
@@ -376,9 +376,18 @@ export async function runLiveWorkflow(): Promise<void> {
       workspace = verifier
       verifier = undefined
     }
+    if (config.enableDesktop && workspace) {
+      await reviewServer?.kill().catch(() => undefined)
+      reviewServer = undefined
+      await portalServer?.kill().catch(() => undefined)
+      portalServer = undefined
+      if (processing === workspace) processing = undefined
+      await workspace.kill().catch(() => undefined)
+      workspace = undefined
+    }
     let desktopResult: { desktop?: Desktop; screenshotPath?: string } = {}
     try {
-      desktopResult = await optionalDesktopReview(client, config, activeVolumeId, reviewCsvPath, workspace)
+      desktopResult = await optionalDesktopReview(client, config, activeVolumeId, reviewCsvPath)
     } catch (error) {
       const reason = redactError(error, [config.password, config.username, config.apiKey ?? "", config.portalUrl ?? ""])
       desktopReview = { status: "skipped", reason }
@@ -406,8 +415,23 @@ export async function runLiveWorkflow(): Promise<void> {
       desktopScreenshot: desktopArtifact,
       desktopReview,
     })
-    await workspace.files.write(`${runRoot}/manifest.json`, JSON.stringify(manifest, null, 2) + "\n")
-    await workspace.files.write(`${reviewDir}/manifest.json`, JSON.stringify(manifest, null, 2) + "\n")
+    const manifestText = JSON.stringify(manifest, null, 2) + "\n"
+    if (workspace) {
+      await workspace.files.write(`${runRoot}/manifest.json`, manifestText)
+      await workspace.files.write(`${reviewDir}/manifest.json`, manifestText)
+    } else if (desktopResult.desktop) {
+      await desktopResult.desktop.fs.write(`${runRoot}/manifest.json`, manifestText)
+      await desktopResult.desktop.fs.write(`${reviewDir}/manifest.json`, manifestText)
+    } else {
+      const finalizer = await client.sandboxes.create({ template: "base", volumes: [{ volumeId: activeVolumeId, path: "/data" }], timeoutMs: config.timeoutMs, lifecycle: { onTimeout: "kill" } })
+      try {
+        await finalizer.connect()
+        await finalizer.files.write(`${runRoot}/manifest.json`, manifestText)
+        await finalizer.files.write(`${reviewDir}/manifest.json`, manifestText)
+      } finally {
+        await finalizer.kill().catch(() => undefined)
+      }
+    }
     console.log(`desktop review: ${desktopReview?.status ?? "unknown"}`)
     if (desktopArtifact && desktopResult.desktop) {
       console.log(`desktop screenshot: ${desktopResult.screenshotPath}`)
