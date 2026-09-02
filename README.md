@@ -38,7 +38,9 @@ past. Copy one into your project and change the parts you care about.
 
 ## Running an example
 
-Each directory is self-contained.
+Each directory is self-contained. TypeScript examples commit npm lockfiles;
+Python examples pin their direct Solari SDK dependency and CI compiles every
+example with the supported Python runtime.
 
 ```bash
 git clone https://github.com/sanskarpan/solari.git

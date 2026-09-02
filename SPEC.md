@@ -43,7 +43,9 @@ must not frame unauthorized access or bot-defense bypass as the product value.
 - A persistent volume with one immutable directory per run.
 - Stateful `runCode` normalization in the sandbox.
 - Review artifacts: raw CSV, normalized JSON, review CSV, manifest, and HTML.
-- A public preview URL for the review page, with its access caveat documented.
+- A public preview URL for the review page, with its access caveat documented;
+  preview bearer query parameters must not be copied into manifest source
+  metadata or fixture logs.
 - An optional desktop review stage using the `office` template, CSV opening,
   screenshot, and `streamUrl`.
 - Offline unit tests for configuration, CSV parsing, normalization, escaping,
@@ -67,7 +69,9 @@ must not frame unauthorized access or bot-defense bypass as the product value.
 3. Log in if required, or reuse a saved profile when the origin is stable.
 4. Download `records.csv` with `waitForEvent("download")`.
 5. Upload the bytes to `/data/runs/<run-id>/raw/records.csv`.
-6. Fork a processing sandbox from the golden snapshot and attach the volume.
+6. Fork a processing sandbox from the golden snapshot and attach the volume;
+   when the account has a one-session limit, safely reuse the workspace and
+   run the volume reattachment verifier sequentially.
 7. Run Python code in a persistent kernel to validate, normalize, deduplicate,
    and write `normalized.json` and `review.csv`.
 8. Generate a review page and manifest containing source, timing, counts, and
