@@ -90,7 +90,8 @@ or file evidence. Update this file in the same commit as the completed work.
 - [x] Navigate, authenticate, and download the CSV using the download event.
 - [x] Transfer download bytes to the sandbox with `files.upload`.
 - [x] Snapshot the prepared workspace and create the processing sandbox from the
-      snapshot with the volume attached.
+      snapshot with the volume attached when capacity permits; reuse the
+      workspace session safely when the account exposes only one live slot.
 - [x] Run stateful sandbox `runCode` to normalize and write output artifacts.
 - [x] Read the normalized output and create the review HTML/manifest.
 - [x] Serve the review directory with `previewUrl` and verify it from the host.
@@ -101,7 +102,7 @@ or file evidence. Update this file in the same commit as the completed work.
 - [x] Implement best-effort browser failure screenshots into the retained run
       directory; screenshot execution remains part of the live environment gate.
 - [x] Mark completed implementation items in this checklist and commit the live
-      workflow; live execution remains a Phase 7 environment gate.
+      workflow; the live path is now verified below with the supplied key.
 
 ## Phase 6 — Browser evidence and optional desktop review
 
@@ -130,30 +131,39 @@ or file evidence. Update this file in the same commit as the completed work.
       HTML, and the manifest itself.
 - [x] Serve a dry-run review tree over local HTTP and verify the dashboard plus
       every artifact link resolves successfully.
-- [ ] Live fixture run passes with a real API key, if available.
-- [ ] Live preview returns the review page and manifest.
-- [ ] Live volume reattach returns the same manifest.
-- [x] Failure injection is wired after transfer, and failed-manifest behavior is
-      covered by the redaction/manifest contract test; live execution remains
-      environment-gated.
-- [x] Offline source/log review finds no API key, password, cookie, or proxy
-      credential emission; live output remains environment-gated.
+- [x] Live fixture run passes with a real API key: run
+      `20260902112908-572ce7be2433` completed with 4 input, 1 valid, and 3
+      invalid records under the supplied key.
+- [x] Live preview returns the review page and manifest: the run waited for and
+      fetched the port-3001 review preview before teardown.
+- [x] Live volume reattach returns the same manifest: the fresh verifier logged
+      `volume persistence: confirmed 5 artifacts` for that run.
+- [x] Failure injection is wired after transfer and live-verified with run
+      `20260902113013-71043065f439`; reattachment returned `status=failed`, the
+      raw CSV plus manifest, zero processed records, and the expected redacted
+      injection error.
+- [x] Live desktop capability attempt is evidenced by run
+      `20260902113201-6b6b8c7c7b2b`; the final manifest is `succeeded` with
+      `desktopReview.status=skipped` and reason `Desktop requires a paid plan`.
+- [x] Source/log review and live output contain no API key, password, cookie, or
+      proxy credential emission; the supplied key was process-only and never
+      written to the repository or volume artifacts.
 - [x] `git diff --check` passes.
 - [x] Mark each offline-verified gate and commit the hardening changes.
 
 ## Phase 8 — Final audit
 
 - [x] Review every SPEC requirement against current files and test evidence;
-      the three live API gates above remain explicitly unverified because no
-      `SOLARI_API_KEY` is available in this environment.
-- [x] Review all unchecked items and document the live gates and deferred
-      product work rather than claiming them as complete.
+      the three live API gates above are verified by run
+      `20260902112908-572ce7be2433`; desktop is separately capability-gated.
+- [x] Review all unchecked items and document the remaining desktop capability
+      limitation and deferred product work rather than claiming them as complete.
 - [x] Confirm `git status` is clean except intentional generated/ignored files.
 - [x] Confirm commit history contains separate cleanup, spec, scaffold/core,
       workflow, and hardening commits; evidence/desktop work is included in the
       hardening commit.
 - [x] Provide a final report separating offline-verified behavior from live API
-      or desktop-capacity-gated behavior.
+      evidence and desktop-capability-gated behavior.
 
 ## Deferred product work
 
