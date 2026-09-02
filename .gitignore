@@ -1,8 +1,10 @@
 node_modules/
 package-lock.json
+!examples/*-ts/package-lock.json
 .env
 __pycache__/
 *.pyc
 .venv/
 venv/
 screenshot.png
+.runs/

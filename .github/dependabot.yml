@@ -1,0 +1,42 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /examples/browser-profiles-ts
+    schedule:
+      interval: monthly
+  - package-ecosystem: npm
+    directory: /examples/browser-quickstart-ts
+    schedule:
+      interval: monthly
+  - package-ecosystem: npm
+    directory: /examples/browser-stealth-proxy-ts
+    schedule:
+      interval: monthly
+  - package-ecosystem: npm
+    directory: /examples/portal-ops-worker-ts
+    schedule:
+      interval: monthly
+  - package-ecosystem: npm
+    directory: /examples/sandbox-port-preview-ts
+    schedule:
+      interval: monthly
+  - package-ecosystem: npm
+    directory: /examples/sandbox-quickstart-ts
+    schedule:
+      interval: monthly
+  - package-ecosystem: pip
+    directory: /examples/browser-quickstart-py
+    schedule:
+      interval: monthly
+  - package-ecosystem: pip
+    directory: /examples/browser-session-recording-py
+    schedule:
+      interval: monthly
+  - package-ecosystem: pip
+    directory: /examples/desktop-computer-use-py
+    schedule:
+      interval: monthly
+  - package-ecosystem: pip
+    directory: /examples/sandbox-code-interpreter-py
+    schedule:
+      interval: monthly

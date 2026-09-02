@@ -1,0 +1,80 @@
+name: repository-quality
+
+on:
+  push:
+    paths:
+      - "examples/**"
+      - "*.md"
+      - ".github/**"
+      - ".gitignore"
+  pull_request:
+    paths:
+      - "examples/**"
+      - "*.md"
+      - ".github/**"
+      - ".gitignore"
+
+permissions:
+  contents: read
+
+jobs:
+  typescript:
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - browser-profiles-ts
+          - browser-quickstart-ts
+          - browser-stealth-proxy-ts
+          - portal-ops-worker-ts
+          - sandbox-port-preview-ts
+          - sandbox-quickstart-ts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+        working-directory: examples/${{ matrix.example }}
+      - run: npm run typecheck --if-present
+        working-directory: examples/${{ matrix.example }}
+      - run: npm test --if-present
+        working-directory: examples/${{ matrix.example }}
+      - run: npm run dry --if-present
+        working-directory: examples/${{ matrix.example }}
+      - run: npm audit --omit=dev --audit-level=high
+        working-directory: examples/${{ matrix.example }}
+
+  python:
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - browser-quickstart-py
+          - browser-session-recording-py
+          - desktop-computer-use-py
+          - sandbox-code-interpreter-py
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --disable-pip-version-check -r requirements.txt
+        working-directory: examples/${{ matrix.example }}
+      - run: python -m compileall -q .
+        working-directory: examples/${{ matrix.example }}
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reject credential-shaped material
+        run: |
+          if git grep -l -I -E 'slr_live_[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN (RSA|OPENSSH|EC) PRIVATE KEY-----' -- . ':(exclude)**/.env.example'; then
+            echo "Credential-shaped material found in tracked files"
+            exit 1
+          fi
