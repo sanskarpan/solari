@@ -1,0 +1,33 @@
+name: portal-ops-worker
+
+on:
+  push:
+    paths:
+      - "examples/portal-ops-worker-ts/**"
+      - ".github/workflows/portal-ops-worker.yml"
+  pull_request:
+    paths:
+      - "examples/portal-ops-worker-ts/**"
+      - ".github/workflows/portal-ops-worker.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: examples/portal-ops-worker-ts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: examples/portal-ops-worker-ts/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run dry
+      - run: npm audit --omit=dev --audit-level=high

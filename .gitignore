@@ -1,5 +1,6 @@
 node_modules/
 package-lock.json
+!examples/portal-ops-worker-ts/package-lock.json
 .env
 __pycache__/
 *.pyc

@@ -289,8 +289,9 @@ export async function runLiveWorkflow(): Promise<void> {
       const portalPreview = await workspace.previewUrl(3000)
       await waitForHttp(portalPreview.url)
       portalUrl = portalPreview.url
-      sourceUrl = `fixture://${portalPreview.url}`
-      console.log(`fixture portal: ${portalPreview.url}`)
+      const safeFixtureUrl = safePortalUrl(portalPreview.url)
+      sourceUrl = `fixture://${safeFixtureUrl}`
+      console.log(`fixture portal: ${safeFixtureUrl}`)
     }
 
     const profiles = await browserClient.profiles.list()
