@@ -205,6 +205,12 @@ async function createProcessingSandbox(client: SolariClient, snapshotId: string,
   return sandbox
 }
 
+function isConcurrencyLimit(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false
+  const candidate = error as { status?: unknown; code?: unknown }
+  return candidate.status === 429 || candidate.code === "ConcurrencyLimitExceeded"
+}
+
 async function optionalDesktopReview(client: SolariClient, config: AppConfig, volumeId: string, reviewCsv: string, workspace: Sandbox): Promise<{ desktop?: Desktop; screenshotPath?: string }> {
   if (!config.enableDesktop) return {}
   const desktop = await client.sandboxes.createDesktop({
@@ -317,7 +323,13 @@ export async function runLiveWorkflow(): Promise<void> {
       if (replay) console.log(`replay: ${replay}`)
     }
 
-    processing = await createProcessingSandbox(client, snapshotId, activeVolumeId, config.timeoutMs)
+    try {
+      processing = await createProcessingSandbox(client, snapshotId, activeVolumeId, config.timeoutMs)
+    } catch (error) {
+      if (!isConcurrencyLimit(error)) throw error
+      processing = workspace
+      console.warn("processing sandbox unavailable at the account concurrency limit; reusing the workspace session")
+    }
     await processing.commands.run("mkdir", { args: ["-p", `${runRoot}/raw`, `${runRoot}/normalized`, reviewDir] })
     await processing.files.upload(rawPath, csvBytes)
     rawUploaded = true
@@ -328,7 +340,7 @@ export async function runLiveWorkflow(): Promise<void> {
     normalized = validateNormalizedRecords(JSON.parse(await processing.files.readText(normalizedPath)))
     const localParity = normalizeRecords(parsePortalCsvForParity(csvBytes))
     if (JSON.stringify(normalized) !== JSON.stringify(localParity)) throw new Error("sandbox output differs from local contract normalization")
-    await processing.kill()
+    if (processing !== workspace) await processing.kill()
     processing = undefined
     await workspace.files.write(`${reviewDir}/index.html`, buildReviewHtml(runId, normalized))
     const artifacts = [`runs/${runId}/raw/records.csv`, `runs/${runId}/normalized/normalized.json`, `runs/${runId}/normalized/review.csv`, `runs/${runId}/review/index.html`, `runs/${runId}/manifest.json`]
@@ -339,13 +351,31 @@ export async function runLiveWorkflow(): Promise<void> {
     const reviewPreview = await workspace.previewUrl(3001)
     await waitForHttp(`${reviewPreview.url}/index.html`)
     console.log(`review: ${reviewPreview.url}/index.html`)
-    verifier = await client.sandboxes.create({ template: "base", volumes: [volumeMount], timeoutMs: config.timeoutMs, lifecycle: { onTimeout: "kill" } })
+    try {
+      verifier = await client.sandboxes.create({ template: "base", volumes: [volumeMount], timeoutMs: config.timeoutMs, lifecycle: { onTimeout: "kill" } })
+    } catch (error) {
+      if (!isConcurrencyLimit(error) || !workspace) throw error
+      console.warn("volume verifier reached the account concurrency limit; releasing the preview sandbox before reattaching")
+      await reviewServer?.kill().catch(() => undefined)
+      reviewServer = undefined
+      await portalServer?.kill().catch(() => undefined)
+      portalServer = undefined
+      if (processing === workspace) processing = undefined
+      await workspace.kill().catch(() => undefined)
+      workspace = undefined
+      verifier = await client.sandboxes.create({ template: "base", volumes: [volumeMount], timeoutMs: config.timeoutMs, lifecycle: { onTimeout: "kill" } })
+    }
     await verifier.connect()
     const persisted = validateRunManifest(JSON.parse(await verifier.files.readText(`${runRoot}/manifest.json`)))
     if (persisted.runId !== runId) throw new Error("volume persistence check returned the wrong run")
     console.log(`volume persistence: confirmed ${persisted.artifacts.length} artifacts`)
-    await verifier.kill()
-    verifier = undefined
+    if (workspace) {
+      await verifier.kill()
+      verifier = undefined
+    } else {
+      workspace = verifier
+      verifier = undefined
+    }
     let desktopResult: { desktop?: Desktop; screenshotPath?: string } = {}
     try {
       desktopResult = await optionalDesktopReview(client, config, activeVolumeId, reviewCsvPath, workspace)
